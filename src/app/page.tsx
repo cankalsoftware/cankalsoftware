@@ -8,7 +8,7 @@ import { ArrowRight, Code2, Cpu, Rocket } from "lucide-react";
 export default function Home() {
   const saasProjects = [
     { title: "Firevision", description: "AI-powered fire detection and monitoring system.", link: "https://firevision.uk", tags: ["AI", "Computer Vision", "SaaS"] },
-    { title: "Evacuation App", description: "Smart evacuation routing and management platform.", link: "#", tags: ["Mobile App", "Safety", "Real-time"] },
+    { title: "Evacuation App", description: "Smart evacuation routing and management platform.", link: "https://www.firevision.uk/evacuation-app", tags: ["Mobile App", "Safety", "Real-time"] },
     { title: "Forex Tracker & Prediction", description: "Machine learning driven Forex market prediction.", link: "#", tags: ["ML", "Finance", "Predictive Analytics"] },
     { title: "Arcade Games", description: "Interactive and engaging arcade game experiences.", link: "#", tags: ["Gaming", "Entertainment"] },
   ];
