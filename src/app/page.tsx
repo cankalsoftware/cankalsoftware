@@ -15,7 +15,7 @@ export default function Home() {
 
   const clientProjects = [
     { title: "Yangincim", link: "https://yangincim.com" },
-    { title: "Usman Yangin", link: "https://usman-yangin.com" },
+    { title: "Uzman Yangin", link: "https://www.uzman-yangin.com" },
     { title: "Dardayim", link: "https://dardayim.com" },
     { title: "Ali Cankal", link: "https://alicankal.com" },
     { title: "Go to Altinkum", link: "https://gotoaltinkum.com" },
