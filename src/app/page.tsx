@@ -39,8 +39,14 @@ export default function Home() {
               Innovating with AI & Machine Learning
             </span>
           </div>
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-500 dark:from-white dark:to-gray-400">
-            Shaping the Future <br className="hidden md:block" /> of <span className="text-[#2563eb] dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#b52bff] dark:to-[#00f0ff]">Software Solutions</span>
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-tight">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-500 dark:from-white dark:to-gray-400">We Turn Your{" "}</span>
+            <span className="relative inline-block">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#2563eb] to-[#1e3a8a] dark:from-[#b52bff] dark:to-[#00f0ff]">Problems</span>
+            </span>
+            <br className="hidden md:block" />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-500 dark:from-white dark:to-gray-400">Into Powerful{" "}</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#2563eb] to-[#1e3a8a] dark:from-[#b52bff] dark:to-[#00f0ff]">Solutions</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 opacity-80">
             Premium SaaS products and AI-driven web development, crafted by Cankal Software & IT Consultancy Ltd.
@@ -64,9 +70,14 @@ export default function Home() {
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          <div className="flex items-center gap-3 mb-8">
-            <Rocket className="w-8 h-8 text-[#2563eb] dark:text-[#b52bff]" />
-            <h2 className="text-3xl md:text-4xl font-bold">Our SaaS Products</h2>
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <Rocket className="w-8 h-8 text-[#2563eb] dark:text-[#b52bff]" />
+              <h2 className="text-3xl md:text-4xl font-bold">Our SaaS Products</h2>
+            </div>
+            <p className="text-lg md:text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-[#2563eb] to-[#1e3a8a] dark:from-[#b52bff] dark:to-[#00f0ff] ml-11">
+              Shaping the Future of Software Solutions
+            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
             {saasProjects.map((project, idx) => (
