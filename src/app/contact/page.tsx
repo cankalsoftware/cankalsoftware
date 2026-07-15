@@ -4,19 +4,29 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { GlassContainer } from "@/components/UIComponents";
 import { Mail, MapPin, Send } from "lucide-react";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 export default function ContactPage() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus("loading");
     
+    if (!executeRecaptcha) {
+      console.error("reCAPTCHA not available");
+      setStatus("error");
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
+    const token = await executeRecaptcha("contact_form");
     const data = {
       name: formData.get("name"),
       email: formData.get("email"),
       message: formData.get("message"),
+      recaptchaToken: token,
     };
 
     try {
