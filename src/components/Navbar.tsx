@@ -14,6 +14,7 @@ export function Navbar() {
         </div>
         <div className="hidden md:flex items-center gap-8 text-base font-semibold">
           <Link href="/" className="bg-clip-text text-transparent bg-gradient-to-r from-[#2563eb] to-[#1e3a8a] dark:from-[#b52bff] dark:to-[#00f0ff] opacity-80 hover:opacity-100 transition-all duration-300">Home</Link>
+          <Link href="/#ai-transformation" className="bg-clip-text text-transparent bg-gradient-to-r from-[#2563eb] to-[#1e3a8a] dark:from-[#b52bff] dark:to-[#00f0ff] opacity-80 hover:opacity-100 transition-all duration-300">AI Transformation</Link>
           <Link href="/about" className="bg-clip-text text-transparent bg-gradient-to-r from-[#2563eb] to-[#1e3a8a] dark:from-[#b52bff] dark:to-[#00f0ff] opacity-80 hover:opacity-100 transition-all duration-300">About Us</Link>
           <Link href="/contact" className="bg-clip-text text-transparent bg-gradient-to-r from-[#2563eb] to-[#1e3a8a] dark:from-[#b52bff] dark:to-[#00f0ff] opacity-80 hover:opacity-100 transition-all duration-300">Contact</Link>
         </div>
