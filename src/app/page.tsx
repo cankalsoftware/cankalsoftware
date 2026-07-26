@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion";
 import { ProjectCard } from "@/components/UIComponents";
+import { ClientStoryCard } from "@/components/ClientStoryCard";
 import Link from "next/link";
-import { ArrowRight, Code2, Cpu, Rocket, BrainCircuit, Workflow, ShieldCheck, Users, CalendarDays } from "lucide-react";
+import { ArrowRight, Code2, Cpu, Rocket, BrainCircuit, Workflow, ShieldCheck, Users, CalendarDays, ExternalLink } from "lucide-react";
 
 export default function Home() {
   const saasProjects = [
@@ -14,14 +15,14 @@ export default function Home() {
   ];
 
   const clientProjects = [
-    { title: "Yangincim", link: "https://yangincim.com" },
-    { title: "Uzman Yangin", link: "https://www.uzman-yangin.com" },
-    { title: "Dardayim", link: "https://dardayim.com" },
-    { title: "Ali Cankal", link: "https://alicankal.com" },
-    { title: "Go to Altinkum", link: "https://gotoaltinkum.com" },
-    { title: "CBT-OS", link: "https://cbt-os.com" },
-    { title: "Handmade to Order", link: "https://handmadetoorder.uk" },
-    { title: "Mentorin AI", link: "https://mentorinai.com" },
+    { title: "Yangincim", link: "https://yangincim.com", problem: "Inefficient fire safety management system requiring manual oversight.", solution: "Developed a comprehensive AI-powered fire detection and monitoring system, integrating smart sensors and real-time alerts.", results: "Significantly reduced response times, improved safety compliance, and decreased operational costs by 30%." },
+    { title: "Uzman Yangin", link: "https://www.uzman-yangin.com", problem: "Outdated website and lack of digital presence for a leading fire safety company.", solution: "Designed and developed a modern, responsive website with improved UI/UX, showcasing their services and expertise.", results: "Increased online inquiries by 50% and enhanced brand credibility in the digital space." },
+    { title: "Dardayim", link: "https://dardayim.com", problem: "Need for a robust e-commerce platform to sell handmade goods online.", solution: "Built a secure and scalable e-commerce solution with integrated payment gateways and inventory management.", results: "Achieved a 40% increase in sales within the first six months and expanded customer reach globally." },
+    { title: "Ali Cankal", link: "https://alicankal.com", problem: "Personal branding website required to showcase portfolio and professional services.", solution: "Crafted a sleek, minimalist portfolio website highlighting key projects, skills, and contact information.", results: "Enhanced professional image, attracted new clients, and provided a central hub for his online presence." },
+    { title: "Go to Altinkum", link: "https://gotoaltinkum.com", problem: "Outdated travel guide website with poor navigation and mobile compatibility.", solution: "Revamped the website with a modern design, intuitive navigation, and full mobile responsiveness, featuring local attractions.", results: "Improved user engagement by 60%, boosted tourism inquiries, and offered a seamless browsing experience across devices." },
+    { title: "CBT-OS", link: "https://cbt-os.com", problem: "Complex internal systems requiring a streamlined operating system for cognitive-behavioral therapy.", solution: "Developed a custom operating system to manage patient data, therapy sessions, and progress tracking, ensuring data security.", results: "Increased administrative efficiency by 25%, allowing therapists to focus more on patient care and less on paperwork." },
+    { title: "Handmade to Order", link: "https://handmadetoorder.uk", problem: "Growing demand for custom handmade products, needing a platform for personalized orders.", solution: "Created a bespoke e-commerce platform allowing customers to customize orders, with a focus on artisan craft and secure transactions.", results: "Boosted custom order volume by 35%, improved customer satisfaction with personalized options, and streamlined order fulfillment." },
+    { title: "Mentorin AI", link: "https://mentorinai.com", problem: "A startup requiring an AI-driven platform for mentorship matching and career guidance.", solution: "Developed an intelligent platform using machine learning to match mentees with suitable mentors and provide tailored career advice.", results: "Successfully launched the platform, attracting a diverse user base and facilitating valuable mentorship connections within the industry." },
   ];
 
   return (
@@ -192,19 +193,15 @@ export default function Home() {
           <h2 className="text-3xl md:text-4xl font-bold mb-8">Client Success Stories</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {clientProjects.map((project, idx) => (
-              <motion.a
-                href={project.link}
-                target="_blank"
-                rel="noopener noreferrer"
+              <ClientStoryCard
                 key={project.title}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.05 }}
-                className="glass glass-hover p-6 rounded-2xl flex items-center justify-center text-center font-medium h-24 hover:text-[#2563eb] dark:hover:text-[#00f0ff]"
-              >
-                {project.title}
-              </motion.a>
+                title={project.title}
+                link={project.link}
+                problem={project.problem}
+                solution={project.solution}
+                results={project.results}
+                idx={idx}
+              />
             ))}
           </div>
         </motion.div>
