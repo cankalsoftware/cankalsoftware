@@ -45,7 +45,7 @@ export default function Home() {
             <span className="relative inline-block">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#2563eb] to-[#1e3a8a] dark:from-[#b52bff] dark:to-[#00f0ff]">Problems</span>
             </span>
-            <br className="hidden md:block" />
+            <br />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-500 dark:from-white dark:to-gray-400">Into Powerful{" "}</span>
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#2563eb] to-[#1e3a8a] dark:from-[#b52bff] dark:to-[#00f0ff]">Solutions</span>
           </h1>
