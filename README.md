@@ -58,7 +58,7 @@ npm install
 ### 3. Configure environment variables
 Create a `.env` file in the project root:
 ```env
-SMTP_HOST="mail.cankalsoftware.com"
+SMTP_HOST="cankalsoftware.com"
 SMTP_PORT="465"
 SMTP_USER="info@cankalsoftware.com"
 SMTP_PASS="your_smtp_password"
