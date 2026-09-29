@@ -1,0 +1,43 @@
+# Cankal Software & IT Consultancy Ltd.
+
+> Premium SaaS products, AI Transformation, and Next-Generation Web Development based in the United Kingdom.
+
+## Company Overview
+Cankal Software and IT Consultancy Ltd. is a UK-registered technology consultancy specializing in Artificial Intelligence (AI), Machine Learning (ML), Computer Vision, and modern full-stack web applications. We build high-performance software for businesses seeking AI automation, custom SaaS platforms, and enterprise-grade web development.
+
+## Founder & Leadership (E-E-A-T)
+- **Founder & Principal Architect:** Ali Cankal
+- **Personal Portfolio:** [https://alicankal.com](https://alicankal.com)
+- **LinkedIn:** [https://linkedin.com/company/cankalsoftware](https://linkedin.com/company/cankalsoftware)
+- **Expertise:** Machine Learning, Computer Vision, Next.js / React Architecture, AI Workflow Automation, SaaS Product Engineering.
+
+## Core Capabilities & Services
+1. **AI Transformation & Automated Workflows:**
+   - Transitioning manual workflows to autonomous, reliable AI pipelines.
+   - AI Governance, security compliance, and safe multimodal AI deployments.
+   - Enterprise AI strategy and change management.
+
+2. **Proprietary SaaS Solutions:**
+   - **Firevision ([https://firevision.uk](https://firevision.uk)):** AI-powered computer vision fire detection and real-time monitoring.
+   - **Smart Evacuation App ([https://www.firevision.uk/evacuation-app](https://www.firevision.uk/evacuation-app)):** Dynamic evacuation routing and emergency facility safety.
+   - **Forex Predictive Analytics:** Machine learning models for market trend analysis.
+
+3. **Bespoke Full-Stack Web Development:**
+   - Next.js (App Router), TypeScript, TailwindCSS, Cloud native backends (Convex, Node.js, Python).
+   - High-converting, aesthetic web design with sub-second performance.
+   - Custom CRM, ERP, and healthcare/therapy operating platforms (e.g. CBT-OS).
+
+## Client Success Stories & Case Studies
+- **Yangincim ([https://yangincim.com](https://yangincim.com)):** AI fire safety monitoring, reducing operational costs by 30%.
+- **Uzman Yangin ([https://www.uzman-yangin.com](https://www.uzman-yangin.com)):** Fire safety digital transformation, boosting inquiries by 50%.
+- **Dardayim ([https://dardayim.com](https://dardayim.com)):** Scalable artisan e-commerce platform (+40% sales).
+- **Ali Cankal ([https://alicankal.com](https://alicankal.com)):** Developer branding and personal portfolio hub.
+- **CBT-OS ([https://cbt-os.com](https://cbt-os.com)):** Secure cognitive behavioral therapy operating system (+25% therapist efficiency).
+- **Mentorin AI ([https://mentorinai.com](https://mentorinai.com)):** Machine learning-powered mentorship matching system.
+- **Go to Altinkum ([https://gotoaltinkum.com](https://gotoaltinkum.com)):** Regional travel & guide platform (+60% user engagement).
+- **Handmade to Order ([https://handmadetoorder.uk](https://handmadetoorder.uk)):** Bespoke customization and e-commerce portal (+35% order volume).
+
+## Geographic & Contact Details
+- **Website:** [https://cankalsoftware.com](https://cankalsoftware.com)
+- **Email:** info@cankalsoftware.com
+- **Country:** United Kingdom (Serving UK & Global Clients)

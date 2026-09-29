@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, Globe2, ExternalLink } from "lucide-react";
 
 const LinkedinIcon = ({ className }: { className?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
+    width="20"
+    height="20"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -23,24 +23,102 @@ const LinkedinIcon = ({ className }: { className?: string }) => (
 export function Footer() {
   return (
     <footer className="mt-20 py-12 border-t border-[var(--border)] relative z-10 bg-black/5 backdrop-blur-sm dark:bg-white/5">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="text-center md:text-left">
-          <h3 className="font-bold text-lg mb-2">Cankal Software and IT Consultancy Ltd.</h3>
-          <p className="text-sm opacity-70 flex items-center justify-center md:justify-start gap-2">
-            <Mail className="h-4 w-4 text-[#2563eb] dark:text-[#00f0ff]" /> info@cankalsoftware.com
-          </p>
-          <p className="text-sm opacity-70 mt-2 flex items-center justify-center md:justify-start gap-2">
-            <MapPin className="h-4 w-4 text-[#2563eb] dark:text-[#00f0ff]" /> United Kingdom
-          </p>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+          {/* Col 1: Brand & UK Reg */}
+          <div className="md:col-span-2 space-y-3 text-center md:text-left">
+            <h3 className="font-bold text-lg">Cankal Software and IT Consultancy Ltd.</h3>
+            <p className="text-sm opacity-75 max-w-md">
+              Specialized in AI Transformation, Computer Vision systems (Firevision), enterprise SaaS architecture, and high-performance web development.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 pt-2 text-sm opacity-80 justify-center md:justify-start">
+              <span className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-[#2563eb] dark:text-[#00f0ff]" /> info@cankalsoftware.com
+              </span>
+              <span className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-[#2563eb] dark:text-[#00f0ff]" /> United Kingdom
+              </span>
+            </div>
+          </div>
+
+          {/* Col 2: Navigation */}
+          <div className="text-center md:text-left space-y-2">
+            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#2563eb] dark:text-[#00f0ff]">
+              Navigation
+            </h4>
+            <ul className="space-y-1.5 text-sm opacity-80">
+              <li>
+                <Link href="/" className="hover:text-[#00f0ff] transition-colors">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="hover:text-[#00f0ff] transition-colors">
+                  About Us & Leadership
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-[#00f0ff] transition-colors">
+                  Contact & Inquiries
+                </Link>
+              </li>
+              <li>
+                <Link href="/#portfolio" className="hover:text-[#00f0ff] transition-colors">
+                  SaaS Portfolio
+                </Link>
+              </li>
+              <li>
+                <Link href="/#faq" className="hover:text-[#00f0ff] transition-colors">
+                  FAQ
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 3: Leadership & Authority */}
+          <div className="text-center md:text-left space-y-2">
+            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#2563eb] dark:text-[#00f0ff]">
+              Leadership
+            </h4>
+            <ul className="space-y-1.5 text-sm opacity-80">
+              <li>
+                <a
+                  href="https://alicankal.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#00f0ff] transition-colors inline-flex items-center gap-1.5"
+                >
+                  <Globe2 className="w-3.5 h-3.5" /> Ali Cankal (Founder) <ExternalLink className="w-3 h-3" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://firevision.uk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#00f0ff] transition-colors inline-flex items-center gap-1.5"
+                >
+                  Firevision.uk <ExternalLink className="w-3 h-3" />
+                </a>
+              </li>
+              <li>
+                <Link
+                  href="https://linkedin.com/company/cankalsoftware"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#00f0ff] transition-colors inline-flex items-center gap-1.5"
+                >
+                  <LinkedinIcon className="w-3.5 h-3.5" /> Company LinkedIn
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
-        <div className="flex gap-4">
-          <Link href="https://linkedin.com/company/cankalsoftware" target="_blank" className="p-3 glass-hover rounded-full">
-            <LinkedinIcon className="h-5 w-5" />
-          </Link>
+
+        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs opacity-60 text-center md:text-left">
+          <p>&copy; {new Date().getFullYear()} Cankal Software and IT Consultancy Ltd. All rights reserved.</p>
+          <p>UK Registered Company • Built with Next.js & AI</p>
         </div>
-      </div>
-      <div className="text-center text-xs opacity-50 mt-8">
-        &copy; {new Date().getFullYear()} Cankal Software and IT Consultancy Ltd. All rights reserved.
       </div>
     </footer>
   );
