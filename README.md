@@ -2,19 +2,19 @@
 
 > **Empowering Modern Enterprises with AI Transformation, Computer Vision, and Next-Generation Web Engineering.**
 
-Official repository for [cankalsoftware.com](https://cankalsoftware.com). Headquartered in the United Kingdom, Cankal Software & IT Consultancy Ltd. specializes in custom Artificial Intelligence systems, scalable SaaS platforms, and high-performance full-stack web applications.
+Official repository for [cankalsoftware.com](https://cankalsoftware.com). Headquartered in the United Kingdom, Cankal Software & IT Consultancy Ltd. specialises in custom Artificial Intelligence systems, scalable SaaS platforms, and high-performance full-stack web applications.
 
 ---
 
 ## 🌟 About Cankal Software
 
-Founded by **Ali Cankal** ([alicankal.com](https://alicankal.com)), Cankal Software bridges cutting-edge AI research with high-impact business solutions. We build proprietary SaaS products and engineer customized software architectures for global enterprises, startups, and specialized industries.
+Founded by **Ali Cankal** ([alicankal.com](https://alicankal.com)), Cankal Software bridges cutting-edge AI research with high-impact business solutions. We build proprietary SaaS products and engineer customised software architectures for global enterprises, startups, and specialised industries.
 
 ### Core Capabilities:
 - **AI Transformation & Workflows:** Transitioning manual business operations into structured, automated AI pipelines.
 - **Computer Vision & IoT:** Real-time visual monitoring, object detection, and smart routing systems.
 - **Proprietary SaaS Solutions:** High-availability cloud platforms engineered with 99.9% uptime.
-- **Modern Full-Stack Web Development:** Sub-second response times, bespoke UI/UX, and SEO/AEO-optimized applications.
+- **Modern Full-Stack Web Development:** Sub-second response times, bespoke UI/UX, and SEO/AEO-optimised applications.
 
 ---
 
@@ -38,42 +38,7 @@ Founded by **Ali Cankal** ([alicankal.com](https://alicankal.com)), Cankal Softw
 - **Icons:** Lucide React
 - **Analytics & Tracking:** Google Analytics (`@next/third-parties/google`), Meta / Facebook Pixel
 - **Security & Forms:** Google reCAPTCHA v3, Nodemailer SMTP backend
-- **Metadata & Optimization:** Rich Schema.org JSON-LD (Organization, ProfessionalService, Person, FAQPage), Answer Engine Optimization (`llms.txt`), Geo-targeting metadata
-
----
-
-## 💻 Getting Started (Local Development)
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/your-username/cankalsoftware.git
-cd cankalsoftware
-```
-
-### 2. Install dependencies
-```bash
-npm install
-```
-
-### 3. Configure environment variables
-Create a `.env` file in the project root:
-```env
-SMTP_HOST="cankalsoftware.com"
-SMTP_PORT="465"
-SMTP_USER="info@cankalsoftware.com"
-SMTP_PASS="your_smtp_password"
-
-NEXT_PUBLIC_GA_ID="your_google_analytics_id"
-NEXT_PUBLIC_RECAPTCHA_SITE_KEY="your_recaptcha_site_key"
-RECAPTCHA_SECRET_KEY="your_recaptcha_secret_key"
-NEXT_PUBLIC_FB_PIXEL_ID="your_meta_pixel_id"
-```
-
-### 4. Run development server
-```bash
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) to view the site.
+- **Metadata & Optimisation:** Rich Schema.org JSON-LD (Organisation, ProfessionalService, Person, FAQPage), Answer Engine Optimisation (`llms.txt`), Geo-targeting metadata
 
 ---
 
@@ -85,6 +50,17 @@ Open [http://localhost:3000](http://localhost:3000) to view the site.
 - **LinkedIn:** [linkedin.com/company/cankalsoftware](https://linkedin.com/company/cankalsoftware)
 - **Headquarters:** United Kingdom
 
+---
+
+### 💙 Support & Build With Me
+
+If you find this project useful, consider sponsoring the maintenance and future feature development:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20My%20Work-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/YOUR_HANDLE)
+
+* **Open-Source Contributors & Learners:** Need advice on AI, ML, or breaking into software engineering? Grab a coffee and let's connect.
+* **Commercial & Bespoke Inquiries:** Looking for enterprise-grade deployment, custom AI workflows, or cloud infrastructure? Explore our professional services at [cankalsoftware.com](https://cankalsoftware.com).
+* 
 ---
 
 &copy; 2026 Cankal Software and IT Consultancy Ltd. All rights reserved.
