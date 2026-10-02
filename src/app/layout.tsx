@@ -112,7 +112,7 @@ const jsonLd = {
         jobTitle: "Founder & Principal AI Architect",
         sameAs: [
           "https://alicankal.com",
-          "https://linkedin.com/company/cankalsoftware",
+          "https://linkedin.com/company/cankal_software",
         ],
       },
       address: {
@@ -139,7 +139,7 @@ const jsonLd = {
         contactType: "customer service",
       },
       sameAs: [
-        "https://linkedin.com/company/cankalsoftware",
+        "https://linkedin.com/company/cankal_software",
         "https://alicankal.com",
       ],
     },

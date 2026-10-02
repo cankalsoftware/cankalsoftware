@@ -47,7 +47,7 @@ If you find this project useful, consider sponsoring the maintenance and future 
 - **Website:** [https://cankalsoftware.com](https://cankalsoftware.com)
 - **Founder Profile:** [https://alicankal.com](https://alicankal.com)
 - **Email:** info@cankalsoftware.com
-- **LinkedIn:** [linkedin.com/company/cankalsoftware](https://linkedin.com/company/cankalsoftware)
+- **LinkedIn:** [linkedin.com/company/cankal_software](https://linkedin.com/company/cankal_software)
 - **Headquarters:** United Kingdom
 
 ---

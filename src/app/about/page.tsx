@@ -71,7 +71,7 @@ export default function AboutPage() {
                     <Globe2 className="w-3.5 h-3.5" /> alicankal.com <ExternalLink className="w-3 h-3" />
                   </a>
                   <a
-                    href="https://linkedin.com/company/cankalsoftware"
+                    href="https://linkedin.com/company/cankal_software"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 transition-all"

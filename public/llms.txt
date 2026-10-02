@@ -8,7 +8,7 @@ Cankal Software and IT Consultancy Ltd. is a UK-registered technology consultanc
 ## Founder & Leadership (E-E-A-T)
 - **Founder & Principal Architect:** Ali Cankal
 - **Personal Portfolio:** [https://alicankal.com](https://alicankal.com)
-- **LinkedIn:** [https://linkedin.com/company/cankalsoftware](https://linkedin.com/company/cankalsoftware)
+- **LinkedIn:** [https://linkedin.com/company/cankal_software](https://linkedin.com/company/cankal_software)
 - **Expertise:** Machine Learning, Computer Vision, Next.js / React Architecture, AI Workflow Automation, SaaS Product Engineering.
 
 ## Core Capabilities & Services

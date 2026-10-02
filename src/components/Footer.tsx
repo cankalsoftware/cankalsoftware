@@ -108,7 +108,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="https://linkedin.com/company/cankalsoftware"
+                  href="https://linkedin.com/company/cankal_software"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-[#00f0ff] transition-colors inline-flex items-center gap-1.5"
