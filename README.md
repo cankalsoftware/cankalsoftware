@@ -2,20 +2,20 @@
 
 > **Empowering Modern Enterprises with AI Transformation, Computer Vision, and Next-Generation Web Engineering.**
 
-Official repository for [cankalsoftware.com](https://cankalsoftware.com). Headquartered in the United Kingdom, Cankal Software & IT Consultancy Ltd. specializes in custom Artificial Intelligence systems, scalable SaaS platforms, and high-performance full-stack web applications.
+Official repository for [cankalsoftware.com](https://cankalsoftware.com). Headquartered in the United Kingdom, Cankal Software & IT Consultancy Ltd. specialises in custom Artificial Intelligence systems, scalable SaaS platforms, and high-performance full-stack web applications.
 
 ---
 
 ## 🌟 About Cankal Software
 
-Founded by **Ali Cankal** ([alicankal.com](https://alicankal.com)), Cankal Software bridges cutting-edge AI research with high-impact business solutions. We build proprietary SaaS products and engineer customized software architectures for global enterprises, startups, and specialized industries.
+Founded by **Ali Cankal** ([alicankal.com](https://alicankal.com)), Cankal Software bridges cutting-edge AI research with high-impact business solutions. We build proprietary SaaS products and engineer customised software architectures for global enterprises, startups, and specialised industries.
 
 ### Core Capabilities:
 - **AI Transformation & Workflows:** Transitioning manual business operations into structured, automated AI pipelines.
 - **AEO & LLM Search Optimization:** Auditing and implementing semantic schemas, entity graphs, and `llms.txt` standards for ChatGPT, Claude, and Perplexity.
 - **Computer Vision & IoT:** Real-time visual monitoring, object detection, and smart routing systems.
 - **Proprietary SaaS Solutions:** High-availability cloud platforms engineered with 99.9% uptime.
-- **Modern Full-Stack Web Development:** Sub-second response times, bespoke UI/UX, and SEO/AEO-optimized applications.
+- **Modern Full-Stack Web Development:** Sub-second response times, bespoke UI/UX, and SEO/AEO-optimised applications.
 
 ---
 
@@ -40,7 +40,7 @@ Founded by **Ali Cankal** ([alicankal.com](https://alicankal.com)), Cankal Softw
 - **Icons:** Lucide React
 - **Analytics & Tracking:** Google Analytics (`@next/third-parties/google`), Meta / Facebook Pixel
 - **Security & Forms:** Google reCAPTCHA v3, Nodemailer SMTP backend
-- **Metadata & Optimization:** Rich Schema.org JSON-LD (Organization, ProfessionalService, Person, FAQPage, SoftwareApplication), Answer Engine Optimization (`llms.txt`), Geo-targeting metadata
+- **Metadata & Optimisation:** Rich Schema.org JSON-LD (Organisation, ProfessionalService, Person, FAQPage, SoftwareApplication), Answer Engine Optimisation (`llms.txt`), Geo-targeting metadata
 
 ---
 
