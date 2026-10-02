@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProjectCard, GlassContainer } from "@/components/UIComponents";
 import { ClientStoryCard } from "@/components/ClientStoryCard";
+import { AeoScannerWidget } from "@/components/AeoScannerWidget";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -167,7 +168,7 @@ export default function Home() {
       />
 
       {/* Hero Section */}
-      <section className="pt-20 lg:pt-32 flex flex-col items-center text-center">
+      <section className="pt-4 sm:pt-8 flex flex-col items-center text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -267,6 +268,11 @@ export default function Home() {
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
               We help you effectively integrate AI into your business to solve problems, accelerate growth, and work smarter.
             </p>
+          </div>
+
+          {/* AEO & LLM Search Readiness Scanner Feature */}
+          <div className="mb-16">
+            <AeoScannerWidget />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">

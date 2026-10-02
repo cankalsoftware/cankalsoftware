@@ -183,7 +183,7 @@ export default function RootLayout({
           <div className="bg-glow-2"></div>
 
           <Navbar />
-          <main className="flex-1 w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-12 relative z-10">
+          <main className="flex-1 w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-2 sm:mt-4 relative z-10">
             {children}
           </main>
           <Footer />

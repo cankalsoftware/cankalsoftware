@@ -63,6 +63,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/aeo-scanner" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center md:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
+                  AEO &amp; LLM Scanner <span className="text-[10px] px-1 py-0.2 bg-blue-500/10 dark:bg-purple-500/20 rounded font-bold">NEW</span>
+                </Link>
+              </li>
+              <li>
                 <Link href="/#portfolio" className="hover:text-[#00f0ff] transition-colors">
                   SaaS Portfolio
                 </Link>
@@ -117,7 +122,7 @@ export function Footer() {
 
         <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs opacity-60 text-center md:text-left">
           <p>&copy; {new Date().getFullYear()} Cankal Software and IT Consultancy Ltd. All rights reserved.</p>
-          <p>UK Registered Company • Built with Next.js & AI</p>
+          <p>UK Registered Company</p>
         </div>
       </div>
     </footer>
