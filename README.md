@@ -31,19 +31,6 @@ Founded by **Ali Cankal** ([alicankal.com](https://alicankal.com)), Cankal Softw
 
 ---
 
-## 🛠️ Technology Stack
-
-- **Framework:** Next.js (App Router, Server Actions, React 19)
-- **Language:** TypeScript
-- **Styling:** TailwindCSS with modern dark-mode glassmorphism design system
-- **Animations:** Framer Motion
-- **Icons:** Lucide React
-- **Analytics & Tracking:** Google Analytics (`@next/third-parties/google`), Meta / Facebook Pixel
-- **Security & Forms:** Google reCAPTCHA v3, Nodemailer SMTP backend
-- **Metadata & Optimisation:** Rich Schema.org JSON-LD (Organisation, ProfessionalService, Person, FAQPage, SoftwareApplication), Answer Engine Optimisation (`llms.txt`), Geo-targeting metadata
-
----
-
 ## 💙 Support & Build With Me
 
 If you find this project useful, consider sponsoring the maintenance and future feature development:
