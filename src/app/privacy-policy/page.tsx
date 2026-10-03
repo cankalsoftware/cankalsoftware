@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
               <strong>Direct Enquiries &amp; Contact Communications:</strong> When you submit a project enquiry or consultation request via our contact form or direct email, we collect your full name, work email address, company name, telephone number (if provided), and project description. We hold this correspondence solely to evaluate your scope and respond to your communication.
             </li>
             <li>
-              <strong>Free Tool Usage Data (AEO, CVE &amp; OWASP Scanners):</strong> When you use our public tools (such as the AEO Scanner, Vulnerability Check, or 2026 OWASP Top 10 Audit), you input public website domains or URLs. <em>Note: Our scanners perform passive, read-only analysis of public HTTP response headers and HTML entirely in-memory. We do not store, harvest, or monetise scanned website contents or discovered vulnerabilities for unauthorised third parties.</em>
+              <strong>Free Tool Usage Data (AEO, Website Health, CVE &amp; OWASP Scanners):</strong> When you use our public tools (such as the AEO Scanner, Website Health &amp; Structure Audit, Vulnerability Check, or 2026 OWASP Top 10 Audit), you input public website domains or URLs. <em>Note: Our scanners perform passive, read-only analysis of public HTTP response headers, DOM semantics, and HTML entirely in-memory. We do not store, harvest, or monetise scanned website contents or discovered vulnerabilities for unauthorised third parties.</em>
             </li>
             <li>
               <strong>Automated Telemetry &amp; Device Information:</strong> Standard server logs, anonymised IP addresses, browser specifications, operating system details, timestamps, and referral paths captured via Google Analytics 4, Microsoft Bing Webmaster Tools, and server diagnostics.
@@ -125,7 +125,7 @@ export default function PrivacyPolicyPage() {
             5. International Data Transfers &amp; Page Analysis
           </h2>
           <p className="text-muted-foreground">
-            Our free online diagnostic tools (AEO Scanner, Vulnerability Check, and 2026 OWASP Top 10 Audit) execute transient, real-time analyses purely in-memory on our UK and European servers. We do not store, copy, or transfer scanned target website data across international borders. The passive inspection results are sent directly back to your active browser session and are discarded immediately upon completion of the scan.
+            Our free online diagnostic tools (AEO Scanner, Website Health &amp; Structure Audit, Vulnerability Check, and 2026 OWASP Top 10 Audit) execute transient, real-time analyses purely in-memory on our UK and European servers. We do not store, copy, or transfer scanned target website data across international borders. The passive inspection results are sent directly back to your active browser session and are discarded immediately upon completion of the scan.
           </p>
           <p className="text-muted-foreground">
             Where standard aggregated analytics data (such as Google Analytics 4 or Microsoft Bing Webmaster Tools) is processed, adequate protections are maintained through the UK International Data Transfer Agreement (IDTA), UK Addendum to the EU Standard Contractual Clauses (SCCs), or relevant UK adequacy regulations.

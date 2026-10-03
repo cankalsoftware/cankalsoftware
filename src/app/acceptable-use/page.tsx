@@ -86,7 +86,7 @@ export default function AcceptableUsePage() {
             3. Permitted &amp; Ethical Tool Usage
           </h2>
           <p className="text-muted-foreground">
-            Our free tools (such as the <strong>AEO &amp; LLM Scanner</strong>, <strong>Vulnerability Check</strong>, and <strong>2026 OWASP Top 10 Audit</strong>) are provided free of charge for defensive, educational, and constructive optimisation purposes under the following conditions:
+            Our free tools (such as the <strong>AEO &amp; LLM Scanner</strong>, <strong>Website Health &amp; Structure Audit</strong>, <strong>Vulnerability Check</strong>, and <strong>2026 OWASP Top 10 Audit</strong>) are provided free of charge for defensive, educational, and constructive optimisation purposes under the following conditions:
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
             <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/15 flex items-start gap-3">

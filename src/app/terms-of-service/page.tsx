@@ -62,7 +62,7 @@ export default function TermsOfServicePage() {
             3. Terms Governing Free Online Tools &amp; Scanners
           </h2>
           <p className="text-muted-foreground">
-            We provide free web utilities, including the <strong>AEO &amp; LLM Search Readiness Scanner</strong>, the <strong>Cyber Security &amp; Vulnerability Check</strong>, and the <strong>2026 OWASP Top 10 Vulnerability Check</strong>, subject to the following express conditions:
+            We provide free web utilities, including the <strong>AEO &amp; LLM Search Readiness Scanner</strong>, the <strong>Website Health &amp; Structure Audit</strong>, the <strong>Cyber Security &amp; Vulnerability Check</strong>, and the <strong>2026 OWASP Top 10 Vulnerability Check</strong>, subject to the following express conditions:
           </p>
           <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
             <li>

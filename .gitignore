@@ -40,6 +40,10 @@ README_CVE.md
 readme_cve*
 README_OWASP.md
 readme_owasp*
+README_HEALTH.md
+readme_health*
+LINKEDIN_POSTS.txt
+linkedin_posts*
 
 # vercel
 .vercel

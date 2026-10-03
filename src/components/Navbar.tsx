@@ -9,6 +9,7 @@ import {
   Bot,
   ShieldAlert,
   ShieldCheck,
+  Activity,
   Search,
   ExternalLink,
   Sparkles,
@@ -42,6 +43,15 @@ export function Navbar() {
       badge: "AI",
       badgeColor: "bg-blue-500/10 dark:bg-purple-500/20 text-[#2563eb] dark:text-[#00f0ff] border-blue-500/20",
       icon: Bot,
+      external: false,
+    },
+    {
+      name: "Website Health Audit",
+      desc: "Audit DOM semantics, image alt tags, contact forms & link health",
+      href: "/health-check",
+      badge: "HEALTH",
+      badgeColor: "bg-teal-500/10 dark:bg-emerald-500/20 text-teal-600 dark:text-emerald-400 border-teal-500/20",
+      icon: Activity,
       external: false,
     },
     {
