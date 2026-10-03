@@ -26,6 +26,8 @@ export interface HealthScanResult {
     isHttps: boolean;
     hasCanonical: boolean;
     compression: string;
+    contactPageFound: boolean;
+    contactPageUrl?: string;
   };
   headings: {
     h1: string[];
@@ -51,10 +53,21 @@ export interface HealthScanResult {
       hasEmailInput: boolean;
       hasSubmitButton: boolean;
       hasCaptcha: boolean;
+      formType?: "standard-form" | "embedded-widget" | "interactive-container";
     }[];
     hasCaptcha: boolean;
     status: "pass" | "warning" | "fail";
     message: string;
+    contactPage?: {
+      found: boolean;
+      url?: string;
+      hasForm: boolean;
+      formCount: number;
+      hasCaptcha: boolean;
+      inputsCount: number;
+      provider?: string;
+      message: string;
+    };
   };
   cookieConsent: {
     detected: boolean;
@@ -305,90 +318,128 @@ export async function POST(req: Request) {
     }
 
     // ------------------------------------------------------------------------
-    // 3. Contact Form & Bot Defense Audit
+    // Helper: Comprehensive Form & Bot Defense Parser
     // ------------------------------------------------------------------------
-    const formMatches = Array.from(html.matchAll(/<form\b([\s\S]*?)<\/form>/gi));
-    const formsCount = formMatches.length;
+    function parseFormsFromHtml(sourceHtml: string) {
+      const lower = sourceHtml.toLowerCase();
+      const hasGlobalCaptcha =
+        lower.includes("recaptcha") ||
+        lower.includes("g-recaptcha") ||
+        lower.includes("challenges.cloudflare.com") ||
+        lower.includes("turnstile") ||
+        lower.includes("cf-turnstile") ||
+        lower.includes("hcaptcha") ||
+        lower.includes("h-captcha") ||
+        lower.includes("protected by recaptcha");
 
-    const lowerHtml = html.toLowerCase();
-    const hasCaptcha =
-      lowerHtml.includes("recaptcha") ||
-      lowerHtml.includes("g-recaptcha") ||
-      lowerHtml.includes("challenges.cloudflare.com") ||
-      lowerHtml.includes("turnstile") ||
-      lowerHtml.includes("hcaptcha");
+      const formMatches = Array.from(sourceHtml.matchAll(/<form\b([\s\S]*?)<\/form>/gi));
+      const items: {
+        action: string;
+        method: string;
+        inputCount: number;
+        hasEmailInput: boolean;
+        hasSubmitButton: boolean;
+        hasCaptcha: boolean;
+        formType?: "standard-form" | "embedded-widget" | "interactive-container";
+      }[] = [];
 
-    const formItems = formMatches.map((f) => {
-      const formContent = f[1];
-      const actionMatch = f[0].match(/action=["']([^"']*)["']/i);
-      const methodMatch = f[0].match(/method=["']([^"']*)["']/i);
-      const action = actionMatch ? actionMatch[1] : "(same-page / javascript handler)";
-      const method = methodMatch ? methodMatch[1].toUpperCase() : "GET";
-      const hasEmailInput = /type=["']email["']/i.test(formContent) || /name=["'](?:email|mail)["']/i.test(formContent);
-      const hasSubmitButton = /type=["']submit["']/i.test(formContent) || /<button/i.test(formContent);
-      const inputCount = (formContent.match(/<input\b/gi) || []).length;
+      for (const f of formMatches) {
+        const formContent = f[1];
+        const actionMatch = f[0].match(/action=["']([^"']*)["']/i);
+        const methodMatch = f[0].match(/method=["']([^"']*)["']/i);
+        const action = actionMatch && actionMatch[1].trim() ? actionMatch[1].trim() : "(same-page / javascript handler)";
+        const method = methodMatch && methodMatch[1].trim() ? methodMatch[1].toUpperCase() : "POST / JS";
+        
+        const hasEmailInput =
+          /type=["']email["']/i.test(formContent) ||
+          /name=["'](?:email|mail|user_email|contact_email)["']/i.test(formContent) ||
+          /id=["'](?:email|mail)["']/i.test(formContent);
+
+        const hasSubmitButton =
+          /type=["']submit["']/i.test(formContent) ||
+          /<button\b/i.test(formContent) ||
+          /type=["']button["']/i.test(formContent);
+
+        const inputCount =
+          (formContent.match(/<input\b/gi) || []).length +
+          (formContent.match(/<textarea\b/gi) || []).length +
+          (formContent.match(/<select\b/gi) || []).length;
+
+        const hasFormCaptcha =
+          hasGlobalCaptcha ||
+          formContent.toLowerCase().includes("recaptcha") ||
+          formContent.toLowerCase().includes("turnstile") ||
+          formContent.toLowerCase().includes("hcaptcha");
+
+        items.push({
+          action,
+          method,
+          inputCount: Math.max(1, inputCount),
+          hasEmailInput,
+          hasSubmitButton,
+          hasCaptcha: hasFormCaptcha,
+          formType: "standard-form",
+        });
+      }
+
+      // Check for embedded third-party contact widgets / iframes
+      const iframeMatches = Array.from(sourceHtml.matchAll(/<iframe\b([^>]*)>/gi));
+      for (const iframe of iframeMatches) {
+        const attrs = iframe[1].toLowerCase();
+        let provider = "";
+        if (attrs.includes("typeform.com")) provider = "Typeform Widget";
+        else if (attrs.includes("hubspot") || attrs.includes("hsforms")) provider = "HubSpot Form Widget";
+        else if (attrs.includes("jotform.com")) provider = "Jotform Widget";
+        else if (attrs.includes("tally.so")) provider = "Tally Form Widget";
+        else if (attrs.includes("calendly.com")) provider = "Calendly Booking Widget";
+        else if (attrs.includes("formspree.io")) provider = "Formspree Widget";
+        else if (attrs.includes("docs.google.com/forms")) provider = "Google Form Embed";
+        else if (attrs.includes("zoho.com")) provider = "Zoho Forms Widget";
+
+        if (provider) {
+          items.push({
+            action: provider,
+            method: "EMBEDDED",
+            inputCount: 3,
+            hasEmailInput: true,
+            hasSubmitButton: true,
+            hasCaptcha: true, // Hosted providers have built-in bot protections
+            formType: "embedded-widget",
+          });
+        }
+      }
+
+      // Check for interactive client-side React / Vue form containers
+      if (items.length === 0) {
+        const totalInputs = (sourceHtml.match(/<input\b/gi) || []).length;
+        const totalTextareas = (sourceHtml.match(/<textarea\b/gi) || []).length;
+        const hasEmail = /type=["']email["']/i.test(sourceHtml) || /name=["'](?:email|mail)["']/i.test(sourceHtml);
+        const hasButtons = /<button\b/i.test(sourceHtml) || /type=["']submit["']/i.test(sourceHtml);
+
+        if ((totalInputs >= 2 || totalTextareas >= 1) && hasEmail && hasButtons) {
+          items.push({
+            action: "(client-side interactive form)",
+            method: "REACT / AJAX",
+            inputCount: totalInputs + totalTextareas,
+            hasEmailInput: hasEmail,
+            hasSubmitButton: hasButtons,
+            hasCaptcha: hasGlobalCaptcha,
+            formType: "interactive-container",
+          });
+        }
+      }
+
+      const hasCaptcha = items.some((it) => it.hasCaptcha) || (items.length > 0 && hasGlobalCaptcha);
 
       return {
-        action,
-        method,
-        inputCount,
-        hasEmailInput,
-        hasSubmitButton,
+        total: items.length,
+        items,
         hasCaptcha,
       };
-    });
-
-    let formsStatus: "pass" | "warning" | "fail" = "pass";
-    let formsMessage = "No interactive contact forms detected.";
-
-    if (formsCount > 0) {
-      if (!hasCaptcha) {
-        formsStatus = "warning";
-        formsMessage = `${formsCount} interactive form(s) found without automated bot protection (reCAPTCHA / Turnstile).`;
-      } else {
-        formsStatus = "pass";
-        formsMessage = `${formsCount} contact form(s) protected with active bot defense.`;
-      }
     }
 
     // ------------------------------------------------------------------------
-    // 4. Cookie Consent Banner & Privacy Audit
-    // ------------------------------------------------------------------------
-    let hasCookieConsent = false;
-    let cookieProvider = "Custom Banner / Consent Mode v2";
-    let cookieDetails = "No cookie consent mechanism detected in markup.";
-
-    if (lowerHtml.includes("consent") && (lowerHtml.includes("cookie") || lowerHtml.includes("privacy"))) {
-      hasCookieConsent = true;
-    }
-    if (lowerHtml.includes("onetrust") || lowerHtml.includes("optanon")) {
-      hasCookieConsent = true;
-      cookieProvider = "OneTrust Consent Management";
-    } else if (lowerHtml.includes("cookiebot")) {
-      hasCookieConsent = true;
-      cookieProvider = "Cookiebot CMP";
-    } else if (lowerHtml.includes("klaro")) {
-      hasCookieConsent = true;
-      cookieProvider = "Klaro Consent Manager";
-    } else if (lowerHtml.includes("termly")) {
-      hasCookieConsent = true;
-      cookieProvider = "Termly CMP";
-    } else if (lowerHtml.includes("osano")) {
-      hasCookieConsent = true;
-      cookieProvider = "Osano Consent Manager";
-    } else if (lowerHtml.includes("gtag('consent'") || lowerHtml.includes('gtag("consent"')) {
-      hasCookieConsent = true;
-      cookieProvider = "Google Consent Mode v2";
-    }
-
-    if (hasCookieConsent) {
-      cookieDetails = `Active user consent banner verified (${cookieProvider}). Complies with UK GDPR / PECR guidelines.`;
-    } else {
-      cookieDetails = "Missing Cookie Consent banner or Google Consent Mode v2 default 'denied' signals.";
-    }
-
-    // ------------------------------------------------------------------------
-    // 5. Link & Anchor Health Audit
+    // 3. Link & Anchor Health Audit + Contact Page Discovery
     // ------------------------------------------------------------------------
     const anchorMatches = Array.from(html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi));
     const totalLinks = anchorMatches.length;
@@ -398,6 +449,10 @@ export async function POST(req: Request) {
     let insecureTargetBlankCount = 0;
 
     const parsedLinks: HealthScanResult["links"]["items"] = [];
+    let discoveredContactPageUrl: string | undefined = undefined;
+
+    const contactUrlPattern = /\/(?:contact(?:-us|_us|us)?|get-in-touch|reach-us|enquir(?:y|ies)|book-demo|demo|touch)\b/i;
+    const contactTextPattern = /\b(?:contact|contact us|get in touch|book a demo|enquir(?:y|ies)|reach us|talk to us)\b/i;
 
     for (const match of anchorMatches) {
       const attrs = match[1];
@@ -431,6 +486,17 @@ export async function POST(req: Request) {
       if (isInsecureBlank) insecureTargetBlankCount++;
       if (isInternal) internalLinksCount++;
       else externalLinksCount++;
+
+      // Check for contact page candidate link
+      if (!discoveredContactPageUrl && isInternal && href && !href.startsWith("mailto:") && !href.startsWith("tel:") && !href.startsWith("#")) {
+        if (contactUrlPattern.test(href) || contactTextPattern.test(text)) {
+          if (href.startsWith("http")) {
+            discoveredContactPageUrl = href;
+          } else {
+            discoveredContactPageUrl = `${origin}${href.startsWith("/") ? "" : "/"}${href}`;
+          }
+        }
+      }
 
       if (parsedLinks.length < 15 && href && !href.startsWith("mailto:") && !href.startsWith("tel:")) {
         parsedLinks.push({
@@ -490,6 +556,152 @@ export async function POST(req: Request) {
     }
 
     // ------------------------------------------------------------------------
+    // 4. Contact Form & Bot Defense Audit (On-Page + Dedicated Contact Page Probe)
+    // ------------------------------------------------------------------------
+    const onPageForms = parseFormsFromHtml(html);
+    const formsCount = onPageForms.total;
+    const formItems = onPageForms.items;
+    const hasCaptcha = onPageForms.hasCaptcha;
+
+    let contactPageInfo: HealthScanResult["forms"]["contactPage"] = undefined;
+
+    // Check if the current audited page is itself the contact page
+    const isAuditingContactPageDirectly =
+      contactUrlPattern.test(finalUrl) ||
+      (discoveredContactPageUrl && finalUrl.toLowerCase().replace(/\/$/, "") === discoveredContactPageUrl.toLowerCase().replace(/\/$/, ""));
+
+    if (isAuditingContactPageDirectly) {
+      contactPageInfo = {
+        found: true,
+        url: finalUrl,
+        hasForm: formsCount > 0,
+        formCount: formsCount,
+        hasCaptcha: hasCaptcha,
+        inputsCount: formItems.reduce((acc, f) => acc + f.inputCount, 0),
+        message: formsCount > 0
+          ? `Auditing dedicated Contact Page directly (${formsCount} form(s) verified with ${hasCaptcha ? "reCAPTCHA / Turnstile active" : "no captcha"}).`
+          : `Auditing Contact Page route directly (no interactive form markup detected on this URL).`,
+      };
+    } else if (discoveredContactPageUrl) {
+      // Background probe of the discovered contact page
+      try {
+        const cController = new AbortController();
+        const cTimeout = setTimeout(() => cController.abort(), 3500);
+        const cRes = await fetch(discoveredContactPageUrl, {
+          signal: cController.signal,
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 (CankalSoftware-ContactCheck/2026; +https://cankalsoftware.com)",
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          },
+        });
+        clearTimeout(cTimeout);
+
+        if (cRes.ok) {
+          const cHtml = (await cRes.text()).slice(0, 300000);
+          const cForms = parseFormsFromHtml(cHtml);
+          contactPageInfo = {
+            found: true,
+            url: discoveredContactPageUrl,
+            hasForm: cForms.total > 0,
+            formCount: cForms.total,
+            hasCaptcha: cForms.hasCaptcha,
+            inputsCount: cForms.items.reduce((acc, f) => acc + f.inputCount, 0),
+            message: cForms.total > 0
+              ? `Dedicated Contact Page verified at ${discoveredContactPageUrl} (${cForms.total} form(s), ${cForms.hasCaptcha ? "reCAPTCHA/Turnstile protected" : "No bot protection"}).`
+              : `Dedicated Contact Page route verified at ${discoveredContactPageUrl} (HTTP 200 OK).`,
+          };
+        } else {
+          contactPageInfo = {
+            found: true,
+            url: discoveredContactPageUrl,
+            hasForm: false,
+            formCount: 0,
+            hasCaptcha: false,
+            inputsCount: 0,
+            message: `Dedicated contact route found at ${discoveredContactPageUrl} (Returned HTTP ${cRes.status}).`,
+          };
+        }
+      } catch {
+        contactPageInfo = {
+          found: true,
+          url: discoveredContactPageUrl,
+          hasForm: false,
+          formCount: 0,
+          hasCaptcha: false,
+          inputsCount: 0,
+          message: `Dedicated contact link discovered in navigation: ${discoveredContactPageUrl}.`,
+        };
+      }
+    }
+
+    let formsStatus: "pass" | "warning" | "fail" = "pass";
+    let formsMessage = "No interactive contact forms detected on this page.";
+
+    if (formsCount > 0) {
+      if (!hasCaptcha) {
+        formsStatus = "warning";
+        formsMessage = `${formsCount} interactive form(s) found on-page without automated bot protection (reCAPTCHA / Turnstile).`;
+      } else {
+        formsStatus = "pass";
+        formsMessage = `${formsCount} contact form(s) verified on-page with active bot defense.`;
+      }
+    } else if (contactPageInfo && contactPageInfo.found) {
+      if (contactPageInfo.hasForm) {
+        if (contactPageInfo.hasCaptcha) {
+          formsStatus = "pass";
+          formsMessage = `No form on landing page, but dedicated Contact Page verified at ${contactPageInfo.url} with active bot defense.`;
+        } else {
+          formsStatus = "warning";
+          formsMessage = `Dedicated Contact Page found at ${contactPageInfo.url} (${contactPageInfo.formCount} form), but lacks reCAPTCHA bot protection.`;
+        }
+      } else {
+        formsStatus = "pass";
+        formsMessage = `Dedicated Contact Page link discovered in navigation (${contactPageInfo.url}).`;
+      }
+    } else {
+      formsStatus = "warning";
+      formsMessage = "No on-page contact form or dedicated contact page link detected in site navigation.";
+    }
+
+    // ------------------------------------------------------------------------
+    // 5. Cookie Consent Banner & Privacy Audit
+    // ------------------------------------------------------------------------
+    let hasCookieConsent = false;
+    let cookieProvider = "Custom Banner / Consent Mode v2";
+    let cookieDetails = "No cookie consent mechanism detected in markup.";
+
+    const lowerHtml = html.toLowerCase();
+    if (lowerHtml.includes("consent") && (lowerHtml.includes("cookie") || lowerHtml.includes("privacy"))) {
+      hasCookieConsent = true;
+    }
+    if (lowerHtml.includes("onetrust") || lowerHtml.includes("optanon")) {
+      hasCookieConsent = true;
+      cookieProvider = "OneTrust Consent Management";
+    } else if (lowerHtml.includes("cookiebot")) {
+      hasCookieConsent = true;
+      cookieProvider = "Cookiebot CMP";
+    } else if (lowerHtml.includes("klaro")) {
+      hasCookieConsent = true;
+      cookieProvider = "Klaro Consent Manager";
+    } else if (lowerHtml.includes("termly")) {
+      hasCookieConsent = true;
+      cookieProvider = "Termly CMP";
+    } else if (lowerHtml.includes("osano")) {
+      hasCookieConsent = true;
+      cookieProvider = "Osano Consent Manager";
+    } else if (lowerHtml.includes("gtag('consent'") || lowerHtml.includes('gtag("consent"')) {
+      hasCookieConsent = true;
+      cookieProvider = "Google Consent Mode v2";
+    }
+
+    if (hasCookieConsent) {
+      cookieDetails = `Active user consent banner verified (${cookieProvider}). Complies with UK GDPR / PECR guidelines.`;
+    } else {
+      cookieDetails = "Missing Cookie Consent banner or Google Consent Mode v2 default 'denied' signals.";
+    }
+
+    // ------------------------------------------------------------------------
     // 6. Protocol, Canonical & Compression Audit
     // ------------------------------------------------------------------------
     const canonicalMatch = html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i);
@@ -520,8 +732,17 @@ export async function POST(req: Request) {
     if (imagesStatus === "fail") score -= 10;
     else if (imagesStatus === "warning") score -= 5;
 
-    // Forms & Privacy (25 pts)
-    if (formsCount > 0 && !hasCaptcha) score -= 10;
+    // Forms, Contact Page & Privacy (25 pts)
+    if (formsCount > 0) {
+      if (!hasCaptcha) score -= 10;
+    } else if (contactPageInfo && contactPageInfo.found) {
+      if (contactPageInfo.hasForm && !contactPageInfo.hasCaptcha) {
+        score -= 5;
+      }
+    } else {
+      score -= 5; // Slight deduction if no on-page form AND no contact page discovered
+    }
+
     if (!hasCookieConsent) score -= 10;
 
     // Links (25 pts)
@@ -647,6 +868,8 @@ export async function POST(req: Request) {
         isHttps,
         hasCanonical: Boolean(canonicalUrl),
         compression,
+        contactPageFound: Boolean(contactPageInfo?.found),
+        contactPageUrl: contactPageInfo?.url,
       },
       headings: {
         h1: h1Matches,
@@ -669,6 +892,7 @@ export async function POST(req: Request) {
         hasCaptcha,
         status: formsStatus,
         message: formsMessage,
+        contactPage: contactPageInfo,
       },
       cookieConsent: {
         detected: hasCookieConsent,
