@@ -18,7 +18,7 @@ import Link from "next/link";
 
 export default function AboutPage() {
   return (
-    <div className="py-12 md:py-20 flex flex-col gap-16">
+    <div className="pt-4 pb-12 md:pt-6 md:pb-16 flex flex-col gap-12">
       {/* Header Section */}
       <section className="text-center">
         <motion.div

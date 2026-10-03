@@ -154,9 +154,9 @@ function AeoScannerContent() {
   ];
 
   return (
-    <div className="flex flex-col gap-16 py-8">
+    <div className="flex flex-col gap-12 pt-2 pb-12">
       {/* Header & Hero */}
-      <section className="text-center max-w-4xl mx-auto pt-6">
+      <section className="text-center max-w-4xl mx-auto pt-1">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

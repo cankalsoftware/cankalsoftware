@@ -50,7 +50,7 @@ export default function CookiePolicyPage() {
   ];
 
   return (
-    <div className="py-16 md:py-24 max-w-4xl mx-auto px-4 sm:px-6 space-y-12">
+    <div className="pt-4 pb-12 md:pt-6 md:pb-16 max-w-4xl mx-auto px-4 sm:px-6 space-y-10">
       {/* Header */}
       <div className="space-y-4 border-b border-black/10 dark:border-white/10 pb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">

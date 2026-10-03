@@ -79,7 +79,7 @@ function ContactFormContent() {
   };
 
   return (
-    <div className="py-12 md:py-20 max-w-5xl mx-auto">
+    <div className="pt-4 pb-12 md:pt-6 md:pb-16 max-w-5xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

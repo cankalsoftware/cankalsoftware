@@ -5,7 +5,7 @@ export default function AcceptableUsePage() {
   const lastUpdated = "October 3, 2026";
 
   return (
-    <div className="py-16 md:py-24 max-w-4xl mx-auto px-4 sm:px-6 space-y-12">
+    <div className="pt-4 pb-12 md:pt-6 md:pb-16 max-w-4xl mx-auto px-4 sm:px-6 space-y-10">
       {/* Header */}
       <div className="space-y-4 border-b border-black/10 dark:border-white/10 pb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-xs font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20">
