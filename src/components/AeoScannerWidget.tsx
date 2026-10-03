@@ -314,30 +314,60 @@ export function AeoScannerWidget({ compact = false }: { compact?: boolean }) {
                 {Object.entries(result.categories).map(([key, cat]) => (
                   <div
                     key={key}
-                    className="p-4 rounded-xl glass border border-gray-200/50 dark:border-white/5 flex flex-col justify-between"
+                    className="p-4 rounded-xl glass border border-gray-200/50 dark:border-white/5 flex flex-col justify-between space-y-3"
                   >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-xs font-semibold">{cat.title}</span>
-                      <div className="flex items-center gap-1.5">
-                        {getStatusIcon(cat.status)}
-                        <span className="text-xs font-mono font-bold">
-                          {cat.score}/{cat.maxScore}
-                        </span>
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-xs font-bold text-foreground">{cat.title}</span>
+                        <div className="flex items-center gap-1.5">
+                          {getStatusIcon(cat.status)}
+                          <span className="text-xs font-mono font-bold">
+                            {cat.score}/{cat.maxScore}
+                          </span>
+                          {cat.lostPoints > 0 && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                              -{cat.lostPoints} pts
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-1.5 mb-2 overflow-hidden">
+                        <div
+                          className={`h-1.5 rounded-full ${
+                            cat.status === "pass"
+                              ? "bg-emerald-500"
+                              : cat.status === "warning"
+                              ? "bg-amber-500"
+                              : "bg-rose-500"
+                          }`}
+                          style={{ width: `${cat.percentage}%` }}
+                        />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-snug">{cat.summary}</p>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-1.5 mb-2 overflow-hidden">
-                      <div
-                        className={`h-1.5 rounded-full ${
-                          cat.status === "pass"
-                            ? "bg-emerald-500"
-                            : cat.status === "warning"
-                            ? "bg-amber-500"
-                            : "bg-rose-500"
-                        }`}
-                        style={{ width: `${cat.percentage}%` }}
-                      />
-                    </div>
-                    <p className="text-[11px] text-muted-foreground truncate">{cat.summary}</p>
+
+                    {/* Itemized Measurements & Deductions */}
+                    {cat.breakdown && cat.breakdown.length > 0 && (
+                      <div className="space-y-1.5 pt-2 border-t border-gray-200/50 dark:border-white/5 text-[11px]">
+                        {cat.breakdown.map((item, idx) => (
+                          <div key={idx} className="flex flex-col gap-0.5">
+                            <div className="flex items-center justify-between text-muted-foreground">
+                              <span className="truncate pr-2 font-medium">
+                                {item.passed ? "✓" : item.earned > 0 ? "⚠" : "✕"} {item.label}
+                              </span>
+                              <span className={`font-mono font-semibold shrink-0 ${item.passed ? "text-emerald-500 dark:text-emerald-400" : item.earned > 0 ? "text-amber-500" : "text-rose-500"}`}>
+                                +{item.earned}/{item.max}
+                              </span>
+                            </div>
+                            {item.lostReason && (
+                              <p className="text-[10px] text-amber-600 dark:text-amber-400/90 pl-3">
+                                ↳ {item.lostReason}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

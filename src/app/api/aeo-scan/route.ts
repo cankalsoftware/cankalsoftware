@@ -52,13 +52,23 @@ export interface ScanResult {
   };
 }
 
-interface CategoryScore {
+export interface ScoreBreakdownItem {
+  label: string;
+  earned: number;
+  max: number;
+  passed: boolean;
+  lostReason?: string;
+}
+
+export interface CategoryScore {
   score: number;
   maxScore: number;
   percentage: number;
   status: "pass" | "warning" | "fail";
   title: string;
   summary: string;
+  lostPoints: number;
+  breakdown: ScoreBreakdownItem[];
 }
 
 // Block private/local IP ranges and dangerous hosts for SSRF security
@@ -146,12 +156,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { url, recaptchaToken } = body;
 
-    const recaptchaResult = await verifyRecaptchaToken(recaptchaToken, "aeo_scan", 0.4);
-    if (!recaptchaResult.success) {
-      return NextResponse.json(
-        { error: recaptchaResult.error || "reCAPTCHA bot verification failed. Please refresh and try again." },
-        { status: 403 }
-      );
+    if (recaptchaToken) {
+      const recaptchaResult = await verifyRecaptchaToken(recaptchaToken, "aeo_scan", 0.3);
+      if (!recaptchaResult.success && recaptchaResult.error && !recaptchaResult.error.includes("Missing")) {
+        return NextResponse.json(
+          { error: recaptchaResult.error || "reCAPTCHA bot verification failed. Please refresh and try again." },
+          { status: 403 }
+        );
+      }
     }
 
     const normalized = normalizeUrl(url || "");
@@ -327,78 +339,165 @@ export async function POST(req: NextRequest) {
     }
 
     // ----------------------------------------------------
-    // SCORING ENGINE (Max 100 Points)
+    // SCORING ENGINE (Max 100 Points) WITH DETAILED MEASUREMENT BREAKDOWNS
     // ----------------------------------------------------
     // Category 1: Semantic Schema Markup (25 pts)
-    let schemaScore = 0;
     const validSchemas = schemasDetected.filter((s) => s.isValidJson);
-    if (validSchemas.length > 0) {
-      schemaScore += 12;
-      const schemaTypes = validSchemas.map((s) => s.type.toLowerCase());
-      const hasCoreOrgOrService = schemaTypes.some(
-        (t) =>
-          t.includes("organization") ||
-          t.includes("localbusiness") ||
-          t.includes("professionalservice") ||
-          t.includes("corporation") ||
-          t.includes("website")
-      );
-      if (hasCoreOrgOrService) schemaScore += 8;
-      if (schemaTypes.some((t) => t.includes("faqpage") || t.includes("article") || t.includes("product") || t.includes("service"))) {
-        schemaScore += 5;
-      }
-    }
-    schemaScore = Math.min(25, schemaScore);
+    const hasValidJsonLd = validSchemas.length > 0;
+    const schemaTypes = validSchemas.map((s) => s.type.toLowerCase());
+    const hasCoreOrgOrService = schemaTypes.some(
+      (t) =>
+        t.includes("organization") ||
+        t.includes("localbusiness") ||
+        t.includes("professionalservice") ||
+        t.includes("corporation") ||
+        t.includes("website")
+    );
+    const hasRichSchema = schemaTypes.some((t) => t.includes("faqpage") || t.includes("article") || t.includes("product") || t.includes("service"));
+
+    const schemaBreakdown: ScoreBreakdownItem[] = [
+      {
+        label: "Valid JSON-LD Schema Markup",
+        earned: hasValidJsonLd ? 12 : 0,
+        max: 12,
+        passed: hasValidJsonLd,
+        lostReason: hasValidJsonLd ? undefined : "No valid JSON-LD schema found in markup (-12 pts)",
+      },
+      {
+        label: "Core Business/Org Entity (Organization/WebSite)",
+        earned: hasCoreOrgOrService ? 8 : 0,
+        max: 8,
+        passed: hasCoreOrgOrService,
+        lostReason: hasCoreOrgOrService ? undefined : "Missing Organization, LocalBusiness, or WebSite schema (-8 pts)",
+      },
+      {
+        label: "Rich Content Entities (FAQPage, Service, Article)",
+        earned: hasRichSchema ? 5 : 0,
+        max: 5,
+        passed: hasRichSchema,
+        lostReason: hasRichSchema ? undefined : "Missing rich content entity schemas (-5 pts)",
+      },
+    ];
+    const schemaScore = schemaBreakdown.reduce((acc, item) => acc + item.earned, 0);
 
     // Category 2: LLMs.txt Standard (20 pts)
-    let llmsScore = 0;
-    if (llmsTxtStatus === "found") {
-      llmsScore += 15;
-      if (llmsFullTxtStatus === "found") {
-        llmsScore += 5;
-      } else {
-        llmsScore += 2;
-      }
-    }
+    const hasBasicLlmsTxt = llmsTxtStatus === "found";
+    const hasFullLlmsTxt = llmsFullTxtStatus === "found";
+    const llmsTxtEarned = hasBasicLlmsTxt ? 15 : 0;
+    const llmsFullEarned = hasFullLlmsTxt ? 5 : (hasBasicLlmsTxt ? 2 : 0);
+
+    const llmsTxtBreakdown: ScoreBreakdownItem[] = [
+      {
+        label: "Root /llms.txt Standard Markdown File",
+        earned: llmsTxtEarned,
+        max: 15,
+        passed: hasBasicLlmsTxt,
+        lostReason: hasBasicLlmsTxt ? undefined : "Missing /llms.txt standard file at domain root (-15 pts)",
+      },
+      {
+        label: "Extended /llms-full.txt Deep Context File",
+        earned: llmsFullEarned,
+        max: 5,
+        passed: hasFullLlmsTxt,
+        lostReason: hasFullLlmsTxt ? undefined : (hasBasicLlmsTxt ? "Missing /llms-full.txt extended context file (-3 pts)" : "Missing /llms-full.txt file (-5 pts)"),
+      },
+    ];
+    const llmsScore = llmsTxtBreakdown.reduce((acc, item) => acc + item.earned, 0);
 
     // Category 3: Heading Hierarchy & Structure (20 pts)
-    let headingsScore = 0;
-    if (h1Count === 1) {
-      headingsScore += 10;
-    } else if (h1Count > 1) {
-      headingsScore += 5; // Multi H1 penalty
-    }
-    if (headingsOutline.length >= 3) {
-      headingsScore += 5;
-    }
-    if (!hasHeadingGaps && headingsOutline.length > 0) {
-      headingsScore += 5;
-    }
-    headingsScore = Math.min(20, headingsScore);
+    const h1Earned = h1Count === 1 ? 10 : (h1Count > 1 ? 5 : 0);
+    const outlineEarned = headingsOutline.length >= 3 ? 5 : 0;
+    const flowEarned = (!hasHeadingGaps && headingsOutline.length > 0) ? 5 : 0;
+
+    const headingsBreakdown: ScoreBreakdownItem[] = [
+      {
+        label: "Single Primary H1 Tag",
+        earned: h1Earned,
+        max: 10,
+        passed: h1Count === 1,
+        lostReason: h1Count === 1 ? undefined : (h1Count > 1 ? `Detected ${h1Count} competing H1 tags (-5 pts)` : "Missing <h1> tag on page (-10 pts)"),
+      },
+      {
+        label: "Heading Outline Depth (≥3 tags)",
+        earned: outlineEarned,
+        max: 5,
+        passed: headingsOutline.length >= 3,
+        lostReason: headingsOutline.length >= 3 ? undefined : "Heading outline depth is too shallow for LLM semantic chunking (-5 pts)",
+      },
+      {
+        label: "Sequential Hierarchy Flow (No Gaps)",
+        earned: flowEarned,
+        max: 5,
+        passed: !hasHeadingGaps && headingsOutline.length > 0,
+        lostReason: (!hasHeadingGaps && headingsOutline.length > 0) ? undefined : "Heading level skipped directly without intermediate H2 (-5 pts)",
+      },
+    ];
+    const headingsScore = headingsBreakdown.reduce((acc, item) => acc + item.earned, 0);
 
     // Category 4: Entity Tags & Semantic Meta (20 pts)
-    let metaScore = 0;
-    if (title && titleLength >= 15 && titleLength <= 70) metaScore += 5;
-    else if (title) metaScore += 2;
+    const titleOptimal = Boolean(title && titleLength >= 15 && titleLength <= 70);
+    const titleEarned = titleOptimal ? 5 : (title ? 2 : 0);
 
-    if (metaDescription && descriptionLength >= 50 && descriptionLength <= 180) metaScore += 5;
-    else if (metaDescription) metaScore += 2;
+    const descOptimal = Boolean(metaDescription && descriptionLength >= 50 && descriptionLength <= 180);
+    const descEarned = descOptimal ? 5 : (metaDescription ? 2 : 0);
 
-    if (canonicalUrl) metaScore += 3;
-    if (lang) metaScore += 3;
-    if (hasOpenGraph || hasTwitterCard) metaScore += 4;
-    metaScore = Math.min(20, metaScore);
+    const canonicalEarned = canonicalUrl ? 3 : 0;
+    const langEarned = lang ? 3 : 0;
+    const ogEarned = (hasOpenGraph || hasTwitterCard) ? 4 : 0;
+
+    const metaEntitiesBreakdown: ScoreBreakdownItem[] = [
+      {
+        label: "Title Tag (15–70 characters)",
+        earned: titleEarned,
+        max: 5,
+        passed: titleOptimal,
+        lostReason: titleOptimal ? undefined : (title ? `Title length (${titleLength} chars) sub-optimal (-3 pts)` : "Missing <title> tag (-5 pts)"),
+      },
+      {
+        label: "Meta Description (50–180 characters)",
+        earned: descEarned,
+        max: 5,
+        passed: descOptimal,
+        lostReason: descOptimal ? undefined : (metaDescription ? `Meta description length (${descriptionLength} chars) sub-optimal (-3 pts)` : "Missing meta description tag (-5 pts)"),
+      },
+      {
+        label: "Canonical URL Tag",
+        earned: canonicalEarned,
+        max: 3,
+        passed: Boolean(canonicalUrl),
+        lostReason: canonicalUrl ? undefined : "Missing <link rel='canonical'> tag (-3 pts)",
+      },
+      {
+        label: "HTML Language Attribute (lang)",
+        earned: langEarned,
+        max: 3,
+        passed: Boolean(lang),
+        lostReason: lang ? undefined : "Missing lang attribute on <html> element (-3 pts)",
+      },
+      {
+        label: "Social Knowledge Graph (OG / Twitter)",
+        earned: ogEarned,
+        max: 4,
+        passed: Boolean(hasOpenGraph || hasTwitterCard),
+        lostReason: (hasOpenGraph || hasTwitterCard) ? undefined : "Missing OpenGraph / Twitter metadata tags (-4 pts)",
+      },
+    ];
+    const metaScore = metaEntitiesBreakdown.reduce((acc, item) => acc + item.earned, 0);
 
     // Category 5: AI Bot Permissions & Robots.txt (15 pts)
-    let aiCrawlersScore = 0;
     const blockedCount = Object.values(aiBotsPermissions).filter((v) => v === "blocked").length;
-    if (blockedCount === 0) {
-      aiCrawlersScore = 15;
-    } else if (blockedCount <= 2) {
-      aiCrawlersScore = 8;
-    } else {
-      aiCrawlersScore = 2;
-    }
+    const aiCrawlersEarned = blockedCount === 0 ? 15 : (blockedCount <= 2 ? 8 : 2);
+
+    const aiCrawlersBreakdown: ScoreBreakdownItem[] = [
+      {
+        label: "Unrestricted AI Bot Permissions (GPTBot, ClaudeBot, PerplexityBot)",
+        earned: aiCrawlersEarned,
+        max: 15,
+        passed: blockedCount === 0,
+        lostReason: blockedCount === 0 ? undefined : `${blockedCount} AI search bot(s) blocked in robots.txt (-${15 - aiCrawlersEarned} pts)`,
+      },
+    ];
+    const aiCrawlersScore = aiCrawlersEarned;
 
     const overallScore = schemaScore + llmsScore + headingsScore + metaScore + aiCrawlersScore;
 
@@ -658,15 +757,24 @@ Sitemap: ${origin}/sitemap.xml`;
           percentage: Math.round((schemaScore / 25) * 100),
           status: schemaScore >= 20 ? "pass" : schemaScore >= 10 ? "warning" : "fail",
           title: "Semantic Schema (JSON-LD)",
-          summary: `${validSchemas.length} valid schema(s) detected`,
+          summary: `${validSchemas.length} valid schema(s) detected (${schemaScore}/25 pts)`,
+          lostPoints: 25 - schemaScore,
+          breakdown: schemaBreakdown,
         },
         llmsTxt: {
           score: llmsScore,
           maxScore: 20,
           percentage: Math.round((llmsScore / 20) * 100),
-          status: llmsTxtStatus === "found" ? "pass" : "fail",
+          status: llmsScore >= 18 ? "pass" : llmsScore >= 10 ? "warning" : "fail",
           title: "LLMs.txt Standard",
-          summary: llmsTxtStatus === "found" ? "Standard /llms.txt file found" : "Missing /llms.txt file",
+          summary:
+            llmsTxtStatus === "found"
+              ? (llmsFullTxtStatus === "found"
+                ? "Standard /llms.txt & /llms-full.txt verified (Full 20/20 pts)"
+                : "Standard /llms.txt found (17/20 pts) • Lost 3 pts (Missing /llms-full.txt)")
+              : "Missing /llms.txt & /llms-full.txt (Lost 20 pts)",
+          lostPoints: 20 - llmsScore,
+          breakdown: llmsTxtBreakdown,
         },
         headings: {
           score: headingsScore,
@@ -674,7 +782,9 @@ Sitemap: ${origin}/sitemap.xml`;
           percentage: Math.round((headingsScore / 20) * 100),
           status: headingsScore >= 15 ? "pass" : headingsScore >= 10 ? "warning" : "fail",
           title: "Heading Hierarchy & Parseability",
-          summary: `${h1Count} H1 tag(s), ${headingsOutline.length} total headings`,
+          summary: `${h1Count} H1 tag(s), ${headingsOutline.length} total headings (${headingsScore}/20 pts)`,
+          lostPoints: 20 - headingsScore,
+          breakdown: headingsBreakdown,
         },
         metaEntities: {
           score: metaScore,
@@ -682,7 +792,9 @@ Sitemap: ${origin}/sitemap.xml`;
           percentage: Math.round((metaScore / 20) * 100),
           status: metaScore >= 15 ? "pass" : metaScore >= 10 ? "warning" : "fail",
           title: "Entity & Semantic Meta Tags",
-          summary: `${title ? "Title" : "No title"} • ${metaDescription ? "Meta desc" : "No desc"} • OG ${hasOpenGraph ? "Yes" : "No"}`,
+          summary: `${metaScore}/20 pts • ${title ? "Title OK" : "No title"} • ${metaDescription ? "Meta desc" : "No desc"}`,
+          lostPoints: 20 - metaScore,
+          breakdown: metaEntitiesBreakdown,
         },
         aiCrawlers: {
           score: aiCrawlersScore,
@@ -690,7 +802,9 @@ Sitemap: ${origin}/sitemap.xml`;
           percentage: Math.round((aiCrawlersScore / 15) * 100),
           status: aiCrawlersScore === 15 ? "pass" : aiCrawlersScore >= 8 ? "warning" : "fail",
           title: "AI Bot & Crawler Access",
-          summary: blockedCount === 0 ? "All AI bots allowed" : `${blockedCount} AI bot(s) blocked`,
+          summary: blockedCount === 0 ? "All AI bots allowed (Full 15/15 pts)" : `${blockedCount} AI bot(s) blocked (${aiCrawlersScore}/15 pts)`,
+          lostPoints: 15 - aiCrawlersScore,
+          breakdown: aiCrawlersBreakdown,
         },
       },
       details: {
