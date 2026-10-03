@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { GlassContainer } from "@/components/UIComponents";
 import {
@@ -10,15 +11,30 @@ import {
   CheckCircle2,
   Globe2,
   ExternalLink,
-  CalendarDays,
   ShieldCheck,
 } from "lucide-react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { trackFbEvent } from "@/components/MetaPixel";
 
-export default function ContactPage() {
+function ContactFormContent() {
+  const searchParams = useSearchParams();
+  const domainParam = searchParams.get("domain") || "";
+  const scoreParam = searchParams.get("score") || "";
+  const gradeParam = searchParams.get("grade") || "";
+  const issuesParam = searchParams.get("issues") || "";
+
+  const [message, setMessage] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const { executeRecaptcha } = useGoogleReCaptcha();
+
+  useEffect(() => {
+    if (domainParam) {
+      const defaultText = `Hello Cankal Software,\n\nI ran a Vulnerability Check on my website (${domainParam})${
+        gradeParam ? ` which received Grade ${gradeParam} (Score: ${scoreParam}/100)` : ""
+      }${issuesParam ? ` with ${issuesParam}` : ""}.\n\nWe would like assistance resolving these security vulnerabilities and hardening our infrastructure. Please get in touch with us regarding your remediation services.`;
+      setMessage(defaultText);
+    }
+  }, [domainParam, scoreParam, gradeParam, issuesParam]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -49,7 +65,6 @@ export default function ContactPage() {
 
       if (response.ok) {
         setStatus("success");
-        // Trigger Meta Pixel Conversion Event for Facebook Ads
         trackFbEvent("Lead", {
           content_name: "Contact Form Submission",
           status: "success",
@@ -75,7 +90,7 @@ export default function ContactPage() {
           Get in <span className="text-[#2563eb] dark:text-[#b52bff]">Touch</span>
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Ready to transform your business with AI, deploy a custom SaaS, or build a high-performance web platform? Let's discuss your project.
+          Ready to transform your business with AI, deploy a custom SaaS, or build a hardened, high-performance web platform? Let&apos;s discuss your project.
         </p>
       </motion.div>
 
@@ -88,7 +103,7 @@ export default function ContactPage() {
           <GlassContainer className="h-full flex flex-col justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4">
-                Consultancy & Inquiries
+                Consultancy &amp; Inquiries
               </h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
@@ -124,7 +139,7 @@ export default function ContactPage() {
                     <Globe2 className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm">Founder & Principal Lead</p>
+                    <p className="font-semibold text-sm">Founder &amp; Principal Lead</p>
                     <a
                       href="https://alicankal.com"
                       target="_blank"
@@ -141,7 +156,7 @@ export default function ContactPage() {
             <div className="mt-8 p-4 rounded-xl bg-white/5 border border-white/10">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
                 <ShieldCheck className="w-4 h-4 text-[#00f0ff]" />
-                <span>Guaranteed 24-48h Response & NDA Protected</span>
+                <span>Guaranteed 24-48h Response &amp; NDA Protected</span>
               </div>
             </div>
           </GlassContainer>
@@ -189,8 +204,10 @@ export default function ContactPage() {
                   id="message"
                   name="message"
                   rows={4}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
                   className="w-full bg-black/5 dark:bg-white/5 border border-[var(--border)] rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-[#00f0ff]/50 transition-all resize-none text-sm"
-                  placeholder="Tell us about your project goals, tech stack, or AI requirements..."
+                  placeholder="Tell us about your project goals, security requirements, or tech stack..."
                 ></textarea>
               </div>
               <button
@@ -223,5 +240,19 @@ export default function ContactPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function ContactPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-20 text-center">
+          <div className="w-10 h-10 border-4 border-blue-500/20 border-t-[#2563eb] rounded-full animate-spin mx-auto" />
+        </div>
+      }
+    >
+      <ContactFormContent />
+    </Suspense>
   );
 }

@@ -14,6 +14,7 @@ import {
   BrainCircuit,
   Workflow,
   ShieldCheck,
+  ShieldAlert,
   Users,
   CalendarDays,
   ExternalLink,
@@ -53,10 +54,10 @@ export default function Home() {
       tags: ["ML", "Finance", "Predictive Analytics"],
     },
     {
-      title: "Arcade Games",
-      description: "Interactive, high-framerate web arcade game experiences.",
-      link: "#",
-      tags: ["Gaming", "Canvas / WebGL", "Entertainment"],
+      title: "Google Scrape App",
+      description: "Automated Google Search and Maps lead generation, data extraction, and business intelligence tool.",
+      link: "https://github.com/cankalsoftware/Google-Scrape",
+      tags: ["Python", "Automation", "Data Scraping", "Open Source"],
     },
   ];
 
@@ -271,8 +272,35 @@ export default function Home() {
           </div>
 
           {/* AEO & LLM Search Readiness Scanner Feature */}
-          <div className="mb-16">
+          <div className="mb-10">
             <AeoScannerWidget />
+          </div>
+
+          {/* Cyber Security & Vulnerability Check Feature Banner */}
+          <div className="mb-16 p-6 rounded-3xl glass border border-blue-500/20 dark:border-[#b52bff]/30 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#2563eb] to-[#00f0ff] flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-500/20">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="font-bold text-base md:text-lg">New: Free Cyber Security &amp; Vulnerability Check</h4>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                    CVE • NVD
+                  </span>
+                </div>
+                <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                  Audit your website against MITRE CVE, NIST NVD, and NCSC UK Cyber Essentials standards.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/vulnerability-check"
+              className="px-5 py-2.5 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] dark:bg-gradient-to-r dark:from-[#b52bff] dark:to-[#00f0ff] dark:hover:opacity-90 text-white font-semibold text-xs transition-all shadow-md flex items-center gap-1.5 shrink-0"
+            >
+              <span>Launch Security Check</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">

@@ -64,8 +64,23 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/aeo-scanner" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center md:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
-                  AEO &amp; LLM Scanner <span className="text-[10px] px-1 py-0.2 bg-blue-500/10 dark:bg-purple-500/20 rounded font-bold">NEW</span>
+                  AEO &amp; LLM Scanner <span className="text-[10px] px-1 py-0.2 bg-blue-500/10 dark:bg-purple-500/20 rounded font-bold">AI</span>
                 </Link>
+              </li>
+              <li>
+                <Link href="/vulnerability-check" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center md:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
+                  Vulnerability Check <span className="text-[10px] px-1 py-0.2 bg-emerald-500/10 dark:bg-cyan-500/20 rounded font-bold">SEC</span>
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/cankalsoftware/Google-Scrape"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center md:justify-start text-xs opacity-80"
+                >
+                  Google Scrape App <ExternalLink className="w-3 h-3" />
+                </a>
               </li>
               <li>
                 <Link href="/#portfolio" className="hover:text-[#00f0ff] transition-colors">
