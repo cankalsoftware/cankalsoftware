@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import type { ScanResult } from "@/app/api/aeo-scan/route";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
-import { getScanQuota, recordScanUsage, MAX_FREE_SCANS_PER_MONTH } from "@/lib/scanQuota";
+import { getScanQuota, recordScanUsage, MAX_FREE_SCANS_PER_MONTH, DEFAULT_SCAN_QUOTA } from "@/lib/scanQuota";
 
 export function AeoScannerWidget({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
@@ -28,8 +28,12 @@ export function AeoScannerWidget({ compact = false }: { compact?: boolean }) {
   const [loadingStep, setLoadingStep] = useState(0);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [quota, setQuota] = useState(() => getScanQuota());
+  const [quota, setQuota] = useState(DEFAULT_SCAN_QUOTA);
   const { executeRecaptcha } = useGoogleReCaptcha();
+
+  useEffect(() => {
+    setQuota(getScanQuota());
+  }, []);
 
   const loadingSteps = [
     "Connecting & fetching HTML markup...",

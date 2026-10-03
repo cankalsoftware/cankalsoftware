@@ -69,7 +69,12 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/vulnerability-check" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center sm:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
-                  Vulnerability Check <span className="text-[10px] px-1 py-0.2 bg-emerald-500/10 dark:bg-cyan-500/20 rounded font-bold">SEC</span>
+                  Vulnerability Check <span className="text-[10px] px-1 py-0.2 bg-emerald-500/10 dark:bg-cyan-500/20 rounded font-bold">CVE</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/owasp-check" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center sm:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
+                  OWASP Top 10 Audit <span className="text-[10px] px-1 py-0.2 bg-purple-500/10 dark:bg-purple-500/20 rounded font-bold">2026</span>
                 </Link>
               </li>
               <li>

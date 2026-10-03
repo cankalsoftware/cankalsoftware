@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Bot,
   ShieldAlert,
+  ShieldCheck,
   Search,
   ExternalLink,
   Sparkles,
@@ -47,9 +48,18 @@ export function Navbar() {
       name: "Vulnerability Check",
       desc: "Cross-reference CVE, MITRE, NIST NVD & NCSC UK security baselines",
       href: "/vulnerability-check",
-      badge: "SEC",
+      badge: "CVE",
       badgeColor: "bg-emerald-500/10 dark:bg-cyan-500/20 text-emerald-600 dark:text-[#00f0ff] border-emerald-500/20",
       icon: ShieldAlert,
+      external: false,
+    },
+    {
+      name: "OWASP Top 10 Audit",
+      desc: "Audit web applications against the 2026 OWASP Top 10 risks",
+      href: "/owasp-check",
+      badge: "2026",
+      badgeColor: "bg-purple-500/10 dark:bg-purple-500/20 text-[#b52bff] dark:text-[#00f0ff] border-purple-500/20",
+      icon: ShieldCheck,
       external: false,
     },
     {
@@ -112,7 +122,7 @@ export function Navbar() {
             >
               <span>Tool Sets</span>
               <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded-full bg-blue-500/10 dark:bg-purple-500/20 text-[#2563eb] dark:text-[#00f0ff] border border-blue-500/20 dark:border-[#b52bff]/30">
-                3
+                {toolItems.length}
               </span>
               <ChevronDown
                 className={`w-3.5 h-3.5 text-[#2563eb] dark:text-[#00f0ff] transition-transform duration-200 ${

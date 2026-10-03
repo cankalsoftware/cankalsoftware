@@ -8,19 +8,21 @@ export interface ScanQuotaInfo {
 
 export const MAX_FREE_SCANS_PER_MONTH = 10;
 
+export const DEFAULT_SCAN_QUOTA: ScanQuotaInfo = {
+  allowed: true,
+  used: 0,
+  max: MAX_FREE_SCANS_PER_MONTH,
+  remaining: MAX_FREE_SCANS_PER_MONTH,
+  month: "",
+};
+
 /**
  * Reads the current client monthly scan quota from localStorage/cookies.
  * Automatically resets when a new calendar month starts.
  */
 export function getScanQuota(): ScanQuotaInfo {
   if (typeof window === "undefined") {
-    return {
-      allowed: true,
-      used: 0,
-      max: MAX_FREE_SCANS_PER_MONTH,
-      remaining: MAX_FREE_SCANS_PER_MONTH,
-      month: "",
-    };
+    return DEFAULT_SCAN_QUOTA;
   }
 
   const currentMonth = new Date().toISOString().slice(0, 7); // e.g. "2026-10"

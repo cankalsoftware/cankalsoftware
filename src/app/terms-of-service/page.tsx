@@ -62,20 +62,20 @@ export default function TermsOfServicePage() {
             3. Terms Governing Free Online Tools &amp; Scanners
           </h2>
           <p className="text-muted-foreground">
-            We provide free web utilities, including the <strong>AEO &amp; LLM Search Readiness Scanner</strong> and the <strong>Cyber Security &amp; Vulnerability Check</strong>, subject to the following express conditions:
+            We provide free web utilities, including the <strong>AEO &amp; LLM Search Readiness Scanner</strong>, the <strong>Cyber Security &amp; Vulnerability Check</strong>, and the <strong>2026 OWASP Top 10 Vulnerability Check</strong>, subject to the following express conditions:
           </p>
           <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
             <li>
               <strong>Informational &amp; Advisory Nature:</strong> Free scanner tools perform automated, passive, external audits of public HTTP headers, SSL/TLS, and public metadata. Results, scores, and remediation blueprints are provided strictly for educational and preliminary diagnostic purposes.
             </li>
             <li>
-              <strong>User Sole Risk &amp; No Warranty:</strong> All free diagnostic tools are provided entirely at your own risk without warranty of any kind. Cankal Software disclaims all liability for any actions, configurations, or modifications implemented based on free scan results.
+              <strong>User Sole Risk &amp; No Warranty:</strong> All free diagnostic tools are provided entirely at your own risk on an &quot;as is&quot; and &quot;as available&quot; basis without warranty of any kind. Cankal Software disclaims all liability for any actions, configurations, or modifications implemented based on free scan results.
             </li>
             <li>
               <strong>Authorisation Warranty:</strong> You represent and warrant that you own or have obtained lawful authorisation from the domain owner before submitting any URL to our scanning engines.
             </li>
             <li>
-              <strong>No Guarantee of Total Immunity:</strong> A high score on our vulnerability check does not guarantee complete immunity against sophisticated cyberattacks, zero-day vulnerabilities, or manual penetration exploits. It does not replace full-scope, authenticated penetration testing.
+              <strong>No Guarantee of Total Immunity:</strong> A high score or pass on any vulnerability or OWASP check does not guarantee complete immunity against sophisticated cyberattacks, zero-day vulnerabilities, or manual penetration exploits. It does not replace full-scope, authenticated penetration testing.
             </li>
           </ul>
         </section>

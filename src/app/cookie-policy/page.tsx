@@ -102,7 +102,7 @@ export default function CookiePolicyPage() {
                 B. Performance &amp; Analytics Cookies
               </h3>
               <p className="text-xs md:text-sm text-muted-foreground">
-                These cookies allow us to count page visits, analyse user journeys, and measure usage of our free tools (AEO Scanner &amp; Vulnerability Check) using Google Analytics 4. All data is collected in an aggregated, anonymous format.
+                These cookies allow us to count page visits, analyse user journeys, and measure usage of our free tools (AEO Scanner, Vulnerability Check &amp; OWASP Top 10 Audit) using Google Analytics 4. All data is collected in an aggregated, anonymous format.
               </p>
             </div>
 

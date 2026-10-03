@@ -58,7 +58,7 @@ export default function ServiceLevelAgreementPage() {
             This Service Level Agreement (&quot;SLA&quot;) sets forth the technical support standards, system availability guarantees, incident response times, and disaster recovery commitments provided by <strong>Cankal Software and IT Consultancy Ltd.</strong> (&quot;Cankal Software&quot;, &quot;we&quot;, &quot;our&quot;) to clients subscribed to our hosted enterprise SaaS platforms (including Firevision), managed cloud solutions, and bespoke software maintenance contracts.
           </p>
           <p className="text-muted-foreground">
-            <em>Note: Free public web tools (such as the AEO Scanner and Vulnerability Check) are provided on an &quot;as-is&quot; basis and are excluded from this formal SLA.</em>
+            <em>Note: Free public web tools (such as the AEO Scanner, Vulnerability Check, and 2026 OWASP Top 10 Audit) are provided on a best-effort &quot;as-is&quot; basis and are excluded from this formal commercial SLA.</em>
           </p>
         </section>
 
