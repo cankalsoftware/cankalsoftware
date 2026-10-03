@@ -18,6 +18,8 @@ import {
   Lock,
 } from "lucide-react";
 import type { ScanResult } from "@/app/api/aeo-scan/route";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { getScanQuota, recordScanUsage, MAX_FREE_SCANS_PER_MONTH } from "@/lib/scanQuota";
 
 export function AeoScannerWidget({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
@@ -26,6 +28,8 @@ export function AeoScannerWidget({ compact = false }: { compact?: boolean }) {
   const [loadingStep, setLoadingStep] = useState(0);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [quota, setQuota] = useState(() => getScanQuota());
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const loadingSteps = [
     "Connecting & fetching HTML markup...",
@@ -36,10 +40,19 @@ export function AeoScannerWidget({ compact = false }: { compact?: boolean }) {
     "Computing AEO / GEO Readiness Score...",
   ];
 
-  const handleScan = async (e?: React.FormEvent) => {
+  const handleScan = async (e?: React.FormEvent, overrideUrl?: string) => {
     if (e) e.preventDefault();
-    if (!url.trim()) {
+    const target = (overrideUrl || url).trim();
+    if (!target) {
       setError("Please enter a valid website URL.");
+      return;
+    }
+
+    const currentQuota = getScanQuota();
+    if (!currentQuota.allowed) {
+      setError(
+        `Monthly Fair Use Quota Reached (${MAX_FREE_SCANS_PER_MONTH}/${MAX_FREE_SCANS_PER_MONTH} free scans used this month). If you require continuous automated monitoring or bulk audits, please contact our engineering team.`
+      );
       return;
     }
 
@@ -53,10 +66,19 @@ export function AeoScannerWidget({ compact = false }: { compact?: boolean }) {
     }, 700);
 
     try {
+      let token = "";
+      if (executeRecaptcha) {
+        try {
+          token = await executeRecaptcha("aeo_scan");
+        } catch {
+          // Continue if recaptcha fails client-side
+        }
+      }
+
       const res = await fetch("/api/aeo-scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: target, recaptchaToken: token }),
       });
 
       const data = await res.json();
@@ -66,6 +88,8 @@ export function AeoScannerWidget({ compact = false }: { compact?: boolean }) {
         setError(data.error || "Failed to scan website. Please verify the URL and try again.");
       } else {
         setResult(data);
+        const updated = recordScanUsage(target);
+        setQuota(updated);
       }
     } catch {
       clearInterval(stepInterval);
@@ -165,21 +189,28 @@ export function AeoScannerWidget({ compact = false }: { compact?: boolean }) {
           </div>
         </form>
 
-        {/* Quick sample chips */}
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-4 relative z-10">
-          <span>Try quick sample:</span>
-          {["cankalsoftware.com", "firevision.uk", "openai.com", "wikipedia.org"].map((sample) => (
-            <button
-              key={sample}
-              type="button"
-              onClick={() => {
-                setUrl(sample);
-              }}
-              className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/10 cursor-pointer text-xs"
-            >
-              {sample}
-            </button>
-          ))}
+        {/* Quick sample chips & Monthly Quota Badge */}
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground mb-4 relative z-10">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium">Try quick sample:</span>
+            {["cankalsoftware.com", "firevision.uk", "openai.com", "wikipedia.org"].map((sample) => (
+              <button
+                key={sample}
+                type="button"
+                onClick={() => {
+                  setUrl(sample);
+                  handleScan(undefined, sample);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors border border-gray-200 dark:border-white/10 cursor-pointer text-xs"
+              >
+                {sample}
+              </button>
+            ))}
+          </div>
+          <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-2.5 py-1 rounded-lg border border-black/5 dark:border-white/5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>{quota.remaining} of {MAX_FREE_SCANS_PER_MONTH} free monthly checks left</span>
+          </span>
         </div>
 
         {/* Error message */}
@@ -322,7 +353,7 @@ export function AeoScannerWidget({ compact = false }: { compact?: boolean }) {
                   type="button"
                   onClick={() =>
                     router.push(
-                      `/contact?subject=${encodeURIComponent(`AEO & AI Search Optimization for ${result.domain}`)}`
+                      `/contact?subject=${encodeURIComponent(`AEO & AI Search Optimisation for ${result.domain}`)}`
                     )
                   }
                   className="px-4 py-2 rounded-xl bg-white dark:bg-white/10 hover:bg-gray-100 dark:hover:bg-white/20 text-xs md:text-sm font-semibold border border-gray-200 dark:border-white/20 transition-all whitespace-nowrap cursor-pointer"

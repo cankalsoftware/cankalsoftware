@@ -7,6 +7,8 @@ import { Footer } from "@/components/Footer";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { MetaPixel } from "@/components/MetaPixel";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { RecaptchaProvider } from "@/components/RecaptchaProvider";
+import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -173,23 +175,26 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col relative">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {/* Background glowing orbs */}
-          <div className="bg-glow"></div>
-          <div className="bg-glow-2"></div>
+        <RecaptchaProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {/* Background glowing orbs */}
+            <div className="bg-glow"></div>
+            <div className="bg-glow-2"></div>
 
-          <Navbar />
-          <main className="flex-1 w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-2 sm:mt-4 relative z-10">
-            {children}
-          </main>
-          <Footer />
-          <ScrollToTop />
-        </ThemeProvider>
+            <Navbar />
+            <main className="flex-1 w-full mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-2 sm:mt-4 relative z-10">
+              {children}
+            </main>
+            <Footer />
+            <ScrollToTop />
+            <CookieConsentBanner />
+          </ThemeProvider>
+        </RecaptchaProvider>
         {process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         )}

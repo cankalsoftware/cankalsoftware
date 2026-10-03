@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, MapPin, Globe2, ExternalLink } from "lucide-react";
+import { Mail, MapPin, Globe2, ExternalLink, ShieldCheck } from "lucide-react";
 
 const LinkedinIcon = ({ className }: { className?: string }) => (
   <svg
@@ -24,27 +24,27 @@ export function Footer() {
   return (
     <footer className="mt-20 py-12 border-t border-[var(--border)] relative z-10 bg-black/5 backdrop-blur-sm dark:bg-white/5">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {/* Col 1: Brand & UK Reg */}
-          <div className="md:col-span-2 space-y-3 text-center md:text-left">
+          <div className="space-y-3 text-center sm:text-left">
             <h3 className="font-bold text-lg">Cankal Software and IT Consultancy Ltd.</h3>
-            <p className="text-sm opacity-75 max-w-md">
+            <p className="text-sm opacity-75 max-w-sm">
               Specialized in AI Transformation, Computer Vision systems (Firevision), enterprise SaaS architecture, and high-performance web development.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-2 text-sm opacity-80 justify-center md:justify-start">
-              <span className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 pt-2 text-sm opacity-80 justify-center sm:justify-start">
+              <span className="flex items-center gap-2 justify-center sm:justify-start">
                 <Mail className="h-4 w-4 text-[#2563eb] dark:text-[#00f0ff]" /> info@cankalsoftware.com
               </span>
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 justify-center sm:justify-start">
                 <MapPin className="h-4 w-4 text-[#2563eb] dark:text-[#00f0ff]" /> United Kingdom
               </span>
             </div>
           </div>
 
-          {/* Col 2: Navigation */}
-          <div className="text-center md:text-left space-y-2">
+          {/* Col 2: Navigation & Tools */}
+          <div className="text-center sm:text-left space-y-2">
             <h4 className="font-semibold text-sm uppercase tracking-wider text-[#2563eb] dark:text-[#00f0ff]">
-              Navigation
+              Navigation &amp; Tools
             </h4>
             <ul className="space-y-1.5 text-sm opacity-80">
               <li>
@@ -54,21 +54,21 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/about" className="hover:text-[#00f0ff] transition-colors">
-                  About Us & Leadership
+                  About Us &amp; Leadership
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-[#00f0ff] transition-colors">
-                  Contact & Inquiries
+                  Contact &amp; Enquiries
                 </Link>
               </li>
               <li>
-                <Link href="/aeo-scanner" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center md:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
+                <Link href="/aeo-scanner" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center sm:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
                   AEO &amp; LLM Scanner <span className="text-[10px] px-1 py-0.2 bg-blue-500/10 dark:bg-purple-500/20 rounded font-bold">AI</span>
                 </Link>
               </li>
               <li>
-                <Link href="/vulnerability-check" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center md:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
+                <Link href="/vulnerability-check" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center sm:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
                   Vulnerability Check <span className="text-[10px] px-1 py-0.2 bg-emerald-500/10 dark:bg-cyan-500/20 rounded font-bold">SEC</span>
                 </Link>
               </li>
@@ -77,7 +77,7 @@ export function Footer() {
                   href="https://github.com/cankalsoftware/Google-Scrape"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center md:justify-start text-xs opacity-80"
+                  className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center sm:justify-start text-xs opacity-80"
                 >
                   Google Scrape App <ExternalLink className="w-3 h-3" />
                 </a>
@@ -87,18 +87,13 @@ export function Footer() {
                   SaaS Portfolio
                 </Link>
               </li>
-              <li>
-                <Link href="/#faq" className="hover:text-[#00f0ff] transition-colors">
-                  FAQ
-                </Link>
-              </li>
             </ul>
           </div>
 
-          {/* Col 3: Leadership & Authority */}
-          <div className="text-center md:text-left space-y-2">
+          {/* Col 3: Leadership & Ecosystem */}
+          <div className="text-center sm:text-left space-y-2">
             <h4 className="font-semibold text-sm uppercase tracking-wider text-[#2563eb] dark:text-[#00f0ff]">
-              Leadership
+              Leadership &amp; Platforms
             </h4>
             <ul className="space-y-1.5 text-sm opacity-80">
               <li>
@@ -122,6 +117,16 @@ export function Footer() {
                 </a>
               </li>
               <li>
+                <a
+                  href="https://www.firevision.uk/evacuation-app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#00f0ff] transition-colors inline-flex items-center gap-1.5"
+                >
+                  Evacuation App <ExternalLink className="w-3 h-3" />
+                </a>
+              </li>
+              <li>
                 <Link
                   href="https://linkedin.com/company/cankal_software"
                   target="_blank"
@@ -133,11 +138,51 @@ export function Footer() {
               </li>
             </ul>
           </div>
+
+          {/* Col 4: Legal & Compliance */}
+          <div className="text-center sm:text-left space-y-2">
+            <h4 className="font-semibold text-sm uppercase tracking-wider text-[#2563eb] dark:text-[#00f0ff]">
+              Legal &amp; Compliance
+            </h4>
+            <ul className="space-y-1.5 text-sm opacity-80">
+              <li>
+                <Link href="/privacy-policy" className="hover:text-[#00f0ff] transition-colors">
+                  Privacy Policy (GDPR)
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms-of-service" className="hover:text-[#00f0ff] transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link href="/cookie-policy" className="hover:text-[#00f0ff] transition-colors">
+                  Cookie Policy (PECR)
+                </Link>
+              </li>
+              <li>
+                <Link href="/acceptable-use" className="hover:text-[#00f0ff] transition-colors">
+                  Acceptable Use Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/service-level-agreement" className="hover:text-[#00f0ff] transition-colors">
+                  Service Level Agreement (SLA)
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs opacity-60 text-center md:text-left">
           <p>&copy; {new Date().getFullYear()} Cankal Software and IT Consultancy Ltd. All rights reserved.</p>
-          <p>UK Registered Company</p>
+          <div className="flex flex-wrap gap-4 justify-center md:justify-end">
+            <span>UK Registered Company</span>
+            <span>•</span>
+            <span>UK GDPR &amp; PECR Compliant</span>
+            <span>•</span>
+            <span>NCSC Cyber Essentials Aligned</span>
+          </div>
         </div>
       </div>
     </footer>

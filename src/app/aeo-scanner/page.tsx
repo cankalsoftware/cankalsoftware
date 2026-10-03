@@ -31,6 +31,7 @@ import {
   Send,
 } from "lucide-react";
 import type { ScanResult } from "@/app/api/aeo-scan/route";
+import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 
 function AeoScannerContent() {
   const searchParams = useSearchParams();
@@ -44,20 +45,21 @@ function AeoScannerContent() {
   const [activeTab, setActiveTab] = useState<"recommendations" | "snippets" | "outline">("recommendations");
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const { executeRecaptcha } = useGoogleReCaptcha();
 
   const loadingSteps = [
     "Connecting to target server & parsing HTML DOM...",
     "Extracting JSON-LD semantic schemas & graph nodes...",
     "Querying /llms.txt and /llms-full.txt endpoints...",
     "Auditing H1-H6 heading hierarchy & document outline...",
-    "Analyzing robots.txt crawler permissions for AI engines...",
-    "Synthesizing AEO & GEO scoring metrics...",
+    "Analysing robots.txt crawler permissions for AI engines...",
+    "Synthesising AEO & GEO scoring metrics...",
   ];
 
   const handleScan = async (targetToScan?: string) => {
     const inputUrl = (targetToScan || url).trim();
     if (!inputUrl) {
-      setError("Please enter a valid website URL to analyze.");
+      setError("Please enter a valid website URL to analyse.");
       return;
     }
 
@@ -70,10 +72,19 @@ function AeoScannerContent() {
     }, 700);
 
     try {
+      let token = "";
+      if (executeRecaptcha) {
+        try {
+          token = await executeRecaptcha("aeo_scan");
+        } catch {
+          // Continue if recaptcha fails client-side
+        }
+      }
+
       const res = await fetch("/api/aeo-scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: inputUrl }),
+        body: JSON.stringify({ url: inputUrl, recaptchaToken: token }),
       });
 
       const data = await res.json();
@@ -121,8 +132,8 @@ function AeoScannerContent() {
 
   const guideFaqs = [
     {
-      q: "What is AEO (Answer Engine Optimization) & GEO (Generative Engine Optimization)?",
-      a: "AEO is the practice of structuring web content so AI answer engines (like ChatGPT Search, Claude, and Perplexity) can directly cite and answer user questions with your brand. GEO focuses on training and generative synthesis optimization, ensuring LLMs understand your entities, services, and authority.",
+      q: "What is AEO (Answer Engine Optimisation) & GEO (Generative Engine Optimisation)?",
+      a: "AEO is the practice of structuring web content so AI answer engines (like ChatGPT Search, Claude, and Perplexity) can directly cite and answer user questions with your brand. GEO focuses on training and generative synthesis optimisation, ensuring LLMs understand your entities, services, and authority.",
     },
     {
       q: "Why is traditional SEO no longer enough in 2026?",
@@ -130,11 +141,11 @@ function AeoScannerContent() {
     },
     {
       q: "What is the /llms.txt standard?",
-      a: "Inspired by robots.txt, /llms.txt is a standardized plain text/markdown file located at the root of a domain. It provides AI agents, scrapers, and LLMs with a clean, concise, structured summary of your company, services, and authoritative links without noise or bloated HTML.",
+      a: "Inspired by robots.txt, /llms.txt is a standardised plain text/markdown file located at the root of a domain. It provides AI agents, scrapers, and LLMs with a clean, concise, structured summary of your company, services, and authoritative links without noise or bloated HTML.",
     },
     {
       q: "How does Cankal Software help my business with AEO?",
-      a: "We perform full-stack architectural upgrades: injecting verified JSON-LD knowledge graphs, deploying custom llms.txt specifications, re-engineering heading structures for semantic chunking, and optimizing AI crawler permissions. We handle everything end-to-end.",
+      a: "We perform full-stack architectural upgrades: injecting verified JSON-LD knowledge graphs, deploying custom llms.txt specifications, re-engineering heading structures for semantic chunking, and optimising AI crawler permissions. We handle everything end-to-end.",
     },
     {
       q: "Do you store or track the URLs that are scanned on this page?",
@@ -218,7 +229,7 @@ function AeoScannerContent() {
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    <span>Analyze Website</span>
+                    <span>Analyse Website</span>
                   </>
                 )}
               </button>
@@ -736,7 +747,7 @@ function AeoScannerContent() {
             </div>
             <h3 className="text-xl font-bold mb-2">2. The /llms.txt Standard</h3>
             <p className="text-sm text-muted-foreground leading-relaxed flex-grow">
-              Created for the generative AI era, <code>/llms.txt</code> provides a concise markdown summary of your site's core purpose and key URLs. LLM scrapers prioritize this file to grasp your company's value proposition in single-digit tokens instead of scraping megabytes of complex JavaScript.
+              Created for the generative AI era, <code>/llms.txt</code> provides a concise markdown summary of your site's core purpose and key URLs. LLM scrapers prioritise this file to grasp your company's value proposition in single-digit tokens instead of scraping megabytes of complex JavaScript.
             </p>
           </div>
 
@@ -849,7 +860,7 @@ curl -X POST https://cankalsoftware.com/api/aeo-scan \\
             Ready to Dominate AI Search Engines?
           </h3>
           <p className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto mb-6">
-            Get in touch with Cankal Software today to audit, rebuild, or optimize your web presence for the generative AI era.
+            Get in touch with Cankal Software today to audit, rebuild, or optimise your web presence for the generative AI era.
           </p>
           <Link
             href="/contact?subject=AEO & AI Search Readiness Strategy"

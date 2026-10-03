@@ -73,8 +73,8 @@ export default function Home() {
       title: "Uzman Yangin",
       link: "https://www.uzman-yangin.com",
       problem: "Outdated website and lack of digital presence for a leading fire safety company.",
-      solution: "Designed and developed a modern, responsive website with seamless UI/UX and inquiry pipelines.",
-      results: "Increased online inquiries by 50% and enhanced corporate brand credibility.",
+      solution: "Designed and developed a modern, responsive website with seamless UI/UX and enquiry pipelines.",
+      results: "Increased online enquiries by 50% and enhanced corporate brand credibility.",
     },
     {
       title: "Dardayim",
@@ -100,16 +100,16 @@ export default function Home() {
     {
       title: "CBT-OS",
       link: "https://cbt-os.com",
-      problem: "Complex internal systems requiring a streamlined operating system for cognitive-behavioral therapy.",
+      problem: "Complex internal systems requiring a streamlined operating system for cognitive-behavioural therapy.",
       solution: "Developed a custom clinical operating system to manage patient data, therapy sessions, and progress tracking.",
-      results: "Increased therapist administrative efficiency by 25%, prioritizing direct patient care.",
+      results: "Increased therapist administrative efficiency by 25%, prioritising direct patient care.",
     },
     {
       title: "Handmade to Order",
       link: "https://handmadetoorder.uk",
-      problem: "Growing demand for custom handmade products, needing a bespoke order customization platform.",
-      solution: "Created an interactive e-commerce platform with live product customization and secure checkout.",
-      results: "Boosted custom order volume by 35% and streamlined artisan order fulfillment.",
+      problem: "Growing demand for custom handmade products, needing a bespoke order customisation platform.",
+      solution: "Created an interactive e-commerce platform with live product customisation and secure checkout.",
+      results: "Boosted custom order volume by 35% and streamlined artisan order fulfilment.",
     },
     {
       title: "Mentorin AI",
@@ -123,7 +123,7 @@ export default function Home() {
   const faqs = [
     {
       q: "What services does Cankal Software provide?",
-      a: "We specialize in end-to-end AI Transformation, Machine Learning & Computer Vision systems (such as Firevision), high-performance custom SaaS platforms, and bespoke web application engineering using modern stacks like Next.js and Cloud native infrastructure.",
+      a: "We specialise in end-to-end AI Transformation, Machine Learning & Computer Vision systems (such as Firevision), high-performance custom SaaS platforms, and bespoke web application engineering using modern stacks like Next.js and Cloud native infrastructure.",
     },
     {
       q: "How can AI Transformation benefit my existing business?",
@@ -131,7 +131,7 @@ export default function Home() {
     },
     {
       q: "Who leads the development and architecture at Cankal Software?",
-      a: "All architecture and development is led by founder Ali Cankal (https://alicankal.com), a veteran software architect specializing in AI systems, Computer Vision, and full-stack engineering, backed by a dedicated UK-registered consultancy team.",
+      a: "All architecture and development is led by founder Ali Cankal (https://alicankal.com), a veteran software architect specialising in AI systems, Computer Vision, and full-stack engineering, backed by a dedicated UK-registered consultancy team.",
     },
     {
       q: "What is your typical project timeline and delivery process?",
@@ -143,7 +143,7 @@ export default function Home() {
     },
     {
       q: "How do I start a project or request a proposal?",
-      a: "You can book a consultancy call or send us a message via our Contact page. We analyze your requirements and provide a clear technical roadmap, architecture plan, and cost estimate within 24 to 48 hours.",
+      a: "You can book a consultancy call or send us a message via our Contact page. We analyse your requirements and provide a clear technical roadmap, architecture plan, and cost estimate within 24 to 48 hours.",
     },
   ];
 

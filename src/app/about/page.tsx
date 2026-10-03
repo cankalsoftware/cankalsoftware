@@ -89,7 +89,7 @@ export default function AboutPage() {
                   Bridging Cutting-Edge AI Research with High-Impact Business Reality
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  Led by Ali Cankal, Cankal Software combines deep technical mastery in Machine Learning, Computer Vision, and Next.js full-stack engineering with real-world business acumen. From conceptualizing and deploying <strong>Firevision</strong> to building customized operational software for high-growth businesses, every project is engineered with precision, security, and speed.
+                  Led by Ali Cankal, Cankal Software combines deep technical mastery in Machine Learning, Computer Vision, and Next.js full-stack engineering with real-world business acumen. From conceptualising and deploying <strong>Firevision</strong> to building customised operational software for high-growth businesses, every project is engineered with precision, security, and speed.
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
                   {[
@@ -125,7 +125,7 @@ export default function AboutPage() {
           },
           {
             icon: <Users className="w-8 h-8 mb-4 text-[#00f0ff]" />,
-            title: "Client-Centric Execution",
+            title: "Client-Centred Execution",
             desc: "We partner directly with founders, executives, and enterprise teams to turn friction points into high-ROI digital solutions.",
           },
           {
@@ -164,12 +164,12 @@ export default function AboutPage() {
                 <div className="flex items-center gap-2 text-sm font-semibold text-[#2563eb] dark:text-[#00f0ff]">
                   <ShieldCheck className="w-4 h-4" /> UK Registered Company
                 </div>
-                <h2 className="text-2xl md:text-3xl font-bold">Our Vision & Commitment</h2>
+                <h2 className="text-2xl md:text-3xl font-bold">Our Vision &amp; Commitment</h2>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  Headquartered in the United Kingdom, Cankal Software & IT Consultancy Ltd. provides international clients with tier-one software engineering and consulting. We believe modern software must be aesthetically breathtaking, lightning fast, and deeply intelligent.
+                  Headquartered in the United Kingdom, Cankal Software &amp; IT Consultancy Ltd. provides international clients with tier-one software engineering and consulting. We believe modern software must be aesthetically breathtaking, lightning fast, and deeply intelligent.
                 </p>
                 <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  Whether you are looking to deploy specialized AI models, build a new SaaS product, or optimize your business workflows, we provide end-to-end strategy, development, and long-term support.
+                  Whether you are looking to deploy specialised AI models, build a new SaaS product, or optimise your business workflows, we provide end-to-end strategy, development, and long-term support.
                 </p>
               </div>
               <div className="w-full md:w-auto shrink-0 flex flex-col gap-3">

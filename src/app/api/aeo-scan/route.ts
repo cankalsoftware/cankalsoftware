@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyRecaptchaToken } from "@/lib/recaptcha";
 
 export interface ScanResult {
   url: string;
@@ -143,7 +144,15 @@ async function fetchWithTimeout(url: string, timeoutMs = 8000): Promise<{ ok: bo
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { url } = body;
+    const { url, recaptchaToken } = body;
+
+    const recaptchaResult = await verifyRecaptchaToken(recaptchaToken, "aeo_scan", 0.4);
+    if (!recaptchaResult.success) {
+      return NextResponse.json(
+        { error: recaptchaResult.error || "reCAPTCHA bot verification failed. Please refresh and try again." },
+        { status: 403 }
+      );
+    }
 
     const normalized = normalizeUrl(url || "");
     if (!normalized.valid || !normalized.normalized || !normalized.domain) {
@@ -439,7 +448,7 @@ Describe your core business in 2-3 concise sentences.
 
 ## Contact & Authority
 - **Website:** ${targetUrl}
-- **Official Inquiries:** info@${domain}`,
+- **Official Enquiries:** info@${domain}`,
         codeSnippetLanguage: "markdown",
       });
     } else {

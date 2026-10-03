@@ -103,7 +103,7 @@ function ContactFormContent() {
           <GlassContainer className="h-full flex flex-col justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-6 border-b border-white/10 pb-4">
-                Consultancy &amp; Inquiries
+                Consultancy &amp; Enquiries
               </h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
@@ -197,7 +197,7 @@ function ContactFormContent() {
               </div>
               <div>
                 <label htmlFor="message" className="block text-sm font-medium mb-2">
-                  Project Brief or Inquiry
+                  Project Brief or Enquiry
                 </label>
                 <textarea
                   required
@@ -219,7 +219,7 @@ function ContactFormContent() {
                   "Sending..."
                 ) : (
                   <>
-                    Submit Project Inquiry <Send className="w-4 h-4" />
+                    Submit Project Enquiry <Send className="w-4 h-4" />
                   </>
                 )}
               </button>

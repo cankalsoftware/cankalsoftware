@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Free AEO & LLM Search Readiness Scanner | AI Optimization Tool",
+  title: "Free AEO & LLM Search Readiness Scanner | AI Optimisation Tool",
   description:
     "Test your website compatibility with AI search engines like ChatGPT, Claude, and Perplexity. Audit semantic schema markup, llms.txt, entity tags, and heading hierarchies with 100% privacy.",
   keywords: [
     "AEO Scanner",
-    "GEO Optimization",
-    "Answer Engine Optimization",
-    "Generative Engine Optimization",
+    "GEO Optimisation",
+    "Answer Engine Optimisation",
+    "Generative Engine Optimisation",
     "LLM Search Readiness",
     "llms.txt checker",
     "JSON-LD Schema validator",
@@ -60,7 +60,7 @@ const scannerJsonLd = {
         priceCurrency: "USD",
       },
       description:
-        "Free tool to analyze website compatibility with AI answer engines (AEO), generative search engines (GEO), and LLMs like ChatGPT, Claude, and Perplexity.",
+        "Free tool to analyse website compatibility with AI answer engines (AEO), generative search engines (GEO), and LLMs like ChatGPT, Claude, and Perplexity.",
       publisher: {
         "@type": "Organization",
         name: "Cankal Software and IT Consultancy Ltd.",
