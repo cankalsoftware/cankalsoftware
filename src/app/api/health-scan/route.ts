@@ -21,12 +21,17 @@ export interface HealthScanResult {
     formsCount: number;
     hasCaptcha: boolean;
     hasCookieConsent: boolean;
+    cookieConsentScore: number;
+    legalPagesCount: number;
+    privacyPolicyFound: boolean;
+    cookiePolicyFound: boolean;
+    termsFound: boolean;
+    contactPageFound: boolean;
     responseTimeMs: number;
     statusCode: number;
     isHttps: boolean;
     hasCanonical: boolean;
     compression: string;
-    contactPageFound: boolean;
     contactPageUrl?: string;
   };
   headings: {
@@ -72,8 +77,35 @@ export interface HealthScanResult {
   cookieConsent: {
     detected: boolean;
     provider?: string;
+    hasRejectAll: boolean;
+    hasGranularSettings: boolean;
+    hasGoogleConsentModeV2: boolean;
+    hasExplicitPriorConsent: boolean;
+    hasCookiePolicyLink: boolean;
+    hasConsentWithdrawalMechanism: boolean;
+    score: number;
+    status: "pass" | "warning" | "fail";
     details: string;
-    status: "pass" | "warning";
+    missingAdvice: string[];
+  };
+  legalPages: {
+    totalFound: number;
+    totalChecked: number;
+    score: number;
+    status: "pass" | "warning" | "fail";
+    message: string;
+    summary: string;
+    pages: {
+      id: "privacy-policy" | "cookie-policy" | "terms-of-service" | "acceptable-use" | "contact-details";
+      name: string;
+      found: boolean;
+      url?: string;
+      status: "pass" | "warning" | "fail";
+      requiredBy: string;
+      summary: string;
+      mandatoryInclusions: string[];
+      missingAdvice: string[];
+    }[];
   };
   links: {
     total: number;
@@ -256,6 +288,7 @@ export async function POST(req: Request) {
 
     const responseTimeMs = Math.max(1, Date.now() - startTime);
     const isHttps = finalUrl.startsWith("https://");
+    const lowerHtml = html.toLowerCase();
 
     // ------------------------------------------------------------------------
     // 1. Heading Hierarchy Audit (H1, H2, H3)
@@ -318,7 +351,7 @@ export async function POST(req: Request) {
     }
 
     // ------------------------------------------------------------------------
-    // Helper: Comprehensive Form & Bot Defense Parser
+    // 3. Helper: Form & Bot Defense Parser
     // ------------------------------------------------------------------------
     function parseFormsFromHtml(sourceHtml: string) {
       const lower = sourceHtml.toLowerCase();
@@ -403,7 +436,7 @@ export async function POST(req: Request) {
             inputCount: 3,
             hasEmailInput: true,
             hasSubmitButton: true,
-            hasCaptcha: true, // Hosted providers have built-in bot protections
+            hasCaptcha: true,
             formType: "embedded-widget",
           });
         }
@@ -439,7 +472,7 @@ export async function POST(req: Request) {
     }
 
     // ------------------------------------------------------------------------
-    // 3. Link & Anchor Health Audit + Contact Page Discovery
+    // 4. Link & Anchor Health Audit + Legal Page Discovery
     // ------------------------------------------------------------------------
     const anchorMatches = Array.from(html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi));
     const totalLinks = anchorMatches.length;
@@ -450,9 +483,25 @@ export async function POST(req: Request) {
 
     const parsedLinks: HealthScanResult["links"]["items"] = [];
     let discoveredContactPageUrl: string | undefined = undefined;
+    let discoveredPrivacyPageUrl: string | undefined = undefined;
+    let discoveredCookiePolicyUrl: string | undefined = undefined;
+    let discoveredTermsPageUrl: string | undefined = undefined;
+    let discoveredAcceptableUseUrl: string | undefined = undefined;
 
     const contactUrlPattern = /\/(?:contact(?:-us|_us|us)?|get-in-touch|reach-us|enquir(?:y|ies)|book-demo|demo|touch)\b/i;
     const contactTextPattern = /\b(?:contact|contact us|get in touch|book a demo|enquir(?:y|ies)|reach us|talk to us)\b/i;
+
+    const privacyUrlPattern = /\/(?:privacy(?:-policy|_policy|-notice|notice)?|data-protection|data-privacy|datenschutz|politique-de-confidentialite)\b/i;
+    const privacyTextPattern = /\b(?:privacy|privacy policy|privacy notice|data protection|datenschutz|confidentialit[ée])\b/i;
+
+    const cookieUrlPattern = /\/(?:cookie(?:-policy|_policy|-notice|notice|s)?|cookie-declaration|cookies)\b/i;
+    const cookieTextPattern = /\b(?:cookie|cookies|cookie policy|cookie-richtlinie|politique de cookies|cookie declaration)\b/i;
+
+    const termsUrlPattern = /\/(?:terms(?:-of-service|_of_service|-and-conditions|_and_conditions)?|tos|terms-conditions|agb|cgu|conditions-generales|user-agreement)\b/i;
+    const termsTextPattern = /\b(?:terms|terms of service|terms & conditions|terms and conditions|terms of use|agb|cgu)\b/i;
+
+    const aupUrlPattern = /\/(?:acceptable-use(?:-policy)?|aup|legal-notice|impressum|mentions-legales|disclaimer|sla|service-level-agreement)\b/i;
+    const aupTextPattern = /\b(?:acceptable use|impressum|legal notice|mentions l[ée]gales|disclaimer|service level agreement)\b/i;
 
     for (const match of anchorMatches) {
       const attrs = match[1];
@@ -487,14 +536,28 @@ export async function POST(req: Request) {
       if (isInternal) internalLinksCount++;
       else externalLinksCount++;
 
-      // Check for contact page candidate link
-      if (!discoveredContactPageUrl && isInternal && href && !href.startsWith("mailto:") && !href.startsWith("tel:") && !href.startsWith("#")) {
-        if (contactUrlPattern.test(href) || contactTextPattern.test(text)) {
-          if (href.startsWith("http")) {
-            discoveredContactPageUrl = href;
-          } else {
-            discoveredContactPageUrl = `${origin}${href.startsWith("/") ? "" : "/"}${href}`;
-          }
+      // Canonicalise helper
+      const resolveFullUrl = (h: string) => {
+        if (h.startsWith("http")) return h;
+        return `${origin}${h.startsWith("/") ? "" : "/"}${h}`;
+      };
+
+      // Discovered Legal and Contact Routes
+      if (isInternal && href && !href.startsWith("mailto:") && !href.startsWith("tel:") && !href.startsWith("#")) {
+        if (!discoveredContactPageUrl && (contactUrlPattern.test(href) || contactTextPattern.test(text))) {
+          discoveredContactPageUrl = resolveFullUrl(href);
+        }
+        if (!discoveredPrivacyPageUrl && (privacyUrlPattern.test(href) || privacyTextPattern.test(text))) {
+          discoveredPrivacyPageUrl = resolveFullUrl(href);
+        }
+        if (!discoveredCookiePolicyUrl && (cookieUrlPattern.test(href) || cookieTextPattern.test(text))) {
+          discoveredCookiePolicyUrl = resolveFullUrl(href);
+        }
+        if (!discoveredTermsPageUrl && (termsUrlPattern.test(href) || termsTextPattern.test(text))) {
+          discoveredTermsPageUrl = resolveFullUrl(href);
+        }
+        if (!discoveredAcceptableUseUrl && (aupUrlPattern.test(href) || aupTextPattern.test(text))) {
+          discoveredAcceptableUseUrl = resolveFullUrl(href);
         }
       }
 
@@ -509,21 +572,63 @@ export async function POST(req: Request) {
       }
     }
 
-    // Asynchronous sample link status verification (test top 5 unique links)
+    // ------------------------------------------------------------------------
+    // 5. Asynchronous Parallel Probing (Sample Links + Missing Legal Pages)
+    // ------------------------------------------------------------------------
     const sampleTestLinks = parsedLinks
       .filter((l) => !l.isVoid && (l.href.startsWith("http") || l.href.startsWith("/")))
       .slice(0, 5);
 
     let deadLinksCount = 0;
-    await Promise.all(
-      sampleTestLinks.map(async (linkItem) => {
+
+    // Fast candidate probes for legal routes not discovered in anchors
+    const probeCandidateMap: {
+      type: "privacy" | "cookie" | "terms" | "aup" | "contact";
+      urls: string[];
+    }[] = [];
+
+    if (!discoveredPrivacyPageUrl) {
+      probeCandidateMap.push({
+        type: "privacy",
+        urls: [`${origin}/privacy-policy`, `${origin}/privacy`, `${origin}/privacy-notice`],
+      });
+    }
+    if (!discoveredCookiePolicyUrl) {
+      probeCandidateMap.push({
+        type: "cookie",
+        urls: [`${origin}/cookie-policy`, `${origin}/cookies`, `${origin}/cookie-notice`],
+      });
+    }
+    if (!discoveredTermsPageUrl) {
+      probeCandidateMap.push({
+        type: "terms",
+        urls: [`${origin}/terms-of-service`, `${origin}/terms`, `${origin}/terms-and-conditions`],
+      });
+    }
+    if (!discoveredAcceptableUseUrl) {
+      probeCandidateMap.push({
+        type: "aup",
+        urls: [`${origin}/acceptable-use`, `${origin}/impressum`, `${origin}/legal-notice`],
+      });
+    }
+    if (!discoveredContactPageUrl) {
+      probeCandidateMap.push({
+        type: "contact",
+        urls: [`${origin}/contact`, `${origin}/contact-us`],
+      });
+    }
+
+    // Execute sample link status verification & legal page candidate probes in parallel
+    await Promise.all([
+      // Sample link probes
+      ...sampleTestLinks.map(async (linkItem) => {
         try {
           const testUrl = linkItem.href.startsWith("http")
             ? linkItem.href
             : `${origin}${linkItem.href.startsWith("/") ? "" : "/"}${linkItem.href}`;
 
           const testController = new AbortController();
-          const tId = setTimeout(() => testController.abort(), 3500);
+          const tId = setTimeout(() => testController.abort(), 2500);
 
           const testRes = await fetch(testUrl, {
             method: "HEAD",
@@ -539,10 +644,37 @@ export async function POST(req: Request) {
           }
         } catch {
           linkItem.status = 0;
-          // Non-blocking timeout
         }
-      })
-    );
+      }),
+
+      // Legal candidate probes
+      ...probeCandidateMap.map(async (candidate) => {
+        for (const testUrl of candidate.urls) {
+          try {
+            const probeController = new AbortController();
+            const pId = setTimeout(() => probeController.abort(), 2000);
+
+            const probeRes = await fetch(testUrl, {
+              method: "HEAD",
+              signal: probeController.signal,
+              headers: { "User-Agent": "CankalSoftware-LegalCompliance/2026" },
+            });
+            clearTimeout(pId);
+
+            if (probeRes.ok || probeRes.status === 200 || probeRes.status === 301 || probeRes.status === 302) {
+              if (candidate.type === "privacy" && !discoveredPrivacyPageUrl) discoveredPrivacyPageUrl = testUrl;
+              else if (candidate.type === "cookie" && !discoveredCookiePolicyUrl) discoveredCookiePolicyUrl = testUrl;
+              else if (candidate.type === "terms" && !discoveredTermsPageUrl) discoveredTermsPageUrl = testUrl;
+              else if (candidate.type === "aup" && !discoveredAcceptableUseUrl) discoveredAcceptableUseUrl = testUrl;
+              else if (candidate.type === "contact" && !discoveredContactPageUrl) discoveredContactPageUrl = testUrl;
+              break;
+            }
+          } catch {
+            // Non-blocking timeout
+          }
+        }
+      }),
+    ]);
 
     let linksStatus: "pass" | "warning" | "fail" = "pass";
     let linksMessage = `Audited ${totalLinks} links (${internalLinksCount} internal, ${externalLinksCount} external).`;
@@ -556,7 +688,7 @@ export async function POST(req: Request) {
     }
 
     // ------------------------------------------------------------------------
-    // 4. Contact Form & Bot Defense Audit (On-Page + Dedicated Contact Page Probe)
+    // 6. Contact Form & Dedicated Contact Page Probe
     // ------------------------------------------------------------------------
     const onPageForms = parseFormsFromHtml(html);
     const formsCount = onPageForms.total;
@@ -565,7 +697,6 @@ export async function POST(req: Request) {
 
     let contactPageInfo: HealthScanResult["forms"]["contactPage"] = undefined;
 
-    // Check if the current audited page is itself the contact page
     const isAuditingContactPageDirectly =
       contactUrlPattern.test(finalUrl) ||
       (discoveredContactPageUrl && finalUrl.toLowerCase().replace(/\/$/, "") === discoveredContactPageUrl.toLowerCase().replace(/\/$/, ""));
@@ -583,10 +714,9 @@ export async function POST(req: Request) {
           : `Auditing Contact Page route directly (no interactive form markup detected on this URL).`,
       };
     } else if (discoveredContactPageUrl) {
-      // Background probe of the discovered contact page
       try {
         const cController = new AbortController();
-        const cTimeout = setTimeout(() => cController.abort(), 3500);
+        const cTimeout = setTimeout(() => cController.abort(), 2500);
         const cRes = await fetch(discoveredContactPageUrl, {
           signal: cController.signal,
           headers: {
@@ -598,7 +728,7 @@ export async function POST(req: Request) {
         clearTimeout(cTimeout);
 
         if (cRes.ok) {
-          const cHtml = (await cRes.text()).slice(0, 300000);
+          const cHtml = (await cRes.text()).slice(0, 250000);
           const cForms = parseFormsFromHtml(cHtml);
           contactPageInfo = {
             found: true,
@@ -665,44 +795,352 @@ export async function POST(req: Request) {
     }
 
     // ------------------------------------------------------------------------
-    // 5. Cookie Consent Banner & Privacy Audit
+    // 7. Comprehensive Cookie Consent Settings Audit (UK GDPR / PECR / Consent Mode v2)
     // ------------------------------------------------------------------------
     let hasCookieConsent = false;
     let cookieProvider = "Custom Banner / Consent Mode v2";
-    let cookieDetails = "No cookie consent mechanism detected in markup.";
+    let hasRejectAll = false;
+    let hasGranularSettings = false;
+    let hasGoogleConsentModeV2 = false;
+    let hasExplicitPriorConsent = true;
+    let hasCookiePolicyLink = Boolean(discoveredCookiePolicyUrl);
+    let hasConsentWithdrawalMechanism = false;
 
-    const lowerHtml = html.toLowerCase();
-    if (lowerHtml.includes("consent") && (lowerHtml.includes("cookie") || lowerHtml.includes("privacy"))) {
-      hasCookieConsent = true;
-    }
-    if (lowerHtml.includes("onetrust") || lowerHtml.includes("optanon")) {
+    // 7A: CMP Provider Detection
+    if (lowerHtml.includes("onetrust") || lowerHtml.includes("optanon") || lowerHtml.includes("ot-sdk")) {
       hasCookieConsent = true;
       cookieProvider = "OneTrust Consent Management";
-    } else if (lowerHtml.includes("cookiebot")) {
+    } else if (lowerHtml.includes("cookiebot") || lowerHtml.includes("data-cookieconsent")) {
       hasCookieConsent = true;
       cookieProvider = "Cookiebot CMP";
-    } else if (lowerHtml.includes("klaro")) {
+    } else if (lowerHtml.includes("klaro") || lowerHtml.includes("data-klaro")) {
       hasCookieConsent = true;
       cookieProvider = "Klaro Consent Manager";
-    } else if (lowerHtml.includes("termly")) {
+    } else if (lowerHtml.includes("termly.io") || lowerHtml.includes("termly")) {
       hasCookieConsent = true;
       cookieProvider = "Termly CMP";
     } else if (lowerHtml.includes("osano")) {
       hasCookieConsent = true;
       cookieProvider = "Osano Consent Manager";
-    } else if (lowerHtml.includes("gtag('consent'") || lowerHtml.includes('gtag("consent"')) {
+    } else if (lowerHtml.includes("usercentrics")) {
+      hasCookieConsent = true;
+      cookieProvider = "Usercentrics CMP";
+    } else if (lowerHtml.includes("cookieyes") || lowerHtml.includes("cky-consent")) {
+      hasCookieConsent = true;
+      cookieProvider = "CookieYes CMP";
+    } else if (lowerHtml.includes("civicuk.com") || lowerHtml.includes("cookiecontrol")) {
+      hasCookieConsent = true;
+      cookieProvider = "Civic UK Cookie Control";
+    } else if (lowerHtml.includes("didomi")) {
+      hasCookieConsent = true;
+      cookieProvider = "Didomi CMP";
+    } else if (lowerHtml.includes("axeptio") || lowerHtml.includes("axept.io")) {
+      hasCookieConsent = true;
+      cookieProvider = "Axeptio CMP";
+    } else if (lowerHtml.includes("iubenda")) {
+      hasCookieConsent = true;
+      cookieProvider = "Iubenda Consent Solution";
+    } else if (lowerHtml.includes("complianz") || lowerHtml.includes("cmplz")) {
+      hasCookieConsent = true;
+      cookieProvider = "Complianz Privacy Suite";
+    } else if (lowerHtml.includes("borlabs-cookie")) {
+      hasCookieConsent = true;
+      cookieProvider = "Borlabs Cookie";
+    } else if (lowerHtml.includes("quantcast.mgr") || lowerHtml.includes("__tcfapi")) {
+      hasCookieConsent = true;
+      cookieProvider = "Quantcast Choice (TCF v2.2)";
+    } else if (
+      (lowerHtml.includes("gtag('consent'") || lowerHtml.includes('gtag("consent"')) &&
+      (lowerHtml.includes("analytics_storage") || lowerHtml.includes("ad_storage"))
+    ) {
       hasCookieConsent = true;
       cookieProvider = "Google Consent Mode v2";
+    } else if (
+      (lowerHtml.includes("cookie-banner") ||
+        lowerHtml.includes("cookie-consent") ||
+        lowerHtml.includes("cookie-popup") ||
+        lowerHtml.includes("cookie-notice") ||
+        lowerHtml.includes("cankal_cookie_consent") ||
+        lowerHtml.includes("cookies-consent")) &&
+      (lowerHtml.includes("accept") || lowerHtml.includes("agree") || lowerHtml.includes("allow"))
+    ) {
+      hasCookieConsent = true;
+      cookieProvider = "Custom Cookie Banner";
     }
 
+    // 7B: Consent Settings Specific Checks
+    if (
+      lowerHtml.includes("reject all") ||
+      lowerHtml.includes("reject non-essential") ||
+      lowerHtml.includes("decline all") ||
+      lowerHtml.includes("decline non-essential") ||
+      lowerHtml.includes("only necessary") ||
+      lowerHtml.includes("refuse all") ||
+      lowerHtml.includes("deny all") ||
+      lowerHtml.includes("tout refuser") ||
+      lowerHtml.includes("alle ablehnen") ||
+      lowerHtml.includes("rechazar todo") ||
+      lowerHtml.includes("cky-btn-reject") ||
+      lowerHtml.includes("optanon-button-reject")
+    ) {
+      hasRejectAll = true;
+    }
+
+    if (
+      lowerHtml.includes("cookie preferences") ||
+      lowerHtml.includes("cookie settings") ||
+      lowerHtml.includes("manage cookies") ||
+      lowerHtml.includes("manage preferences") ||
+      lowerHtml.includes("customise") ||
+      lowerHtml.includes("customize") ||
+      lowerHtml.includes("cookie-einstellungen") ||
+      lowerHtml.includes("paramètres des cookies") ||
+      lowerHtml.includes("cky-btn-customize") ||
+      lowerHtml.includes("ot-sdk-show-settings") ||
+      (lowerHtml.includes("analytics") && lowerHtml.includes("marketing") && lowerHtml.includes("necessary"))
+    ) {
+      hasGranularSettings = true;
+    }
+
+    if (
+      (lowerHtml.includes("analytics_storage") && lowerHtml.includes("ad_storage")) ||
+      lowerHtml.includes("ad_user_data") ||
+      lowerHtml.includes("ad_personalization")
+    ) {
+      hasGoogleConsentModeV2 = true;
+    }
+
+    // Script Blocking / Prior Consent Check:
+    // If tracking scripts (GA4, FB Pixel, TikTok, Clarity) exist without Consent Mode or CMP data attributes
+    const hasUnblockedTracking =
+      (lowerHtml.includes("googletagmanager.com/gtag/js") ||
+        lowerHtml.includes("connect.facebook.net") ||
+        lowerHtml.includes("clarity.ms") ||
+        lowerHtml.includes("analytics.tiktok.com")) &&
+      !hasGoogleConsentModeV2 &&
+      !lowerHtml.includes("data-cookieconsent") &&
+      !lowerHtml.includes("type=\"text/plain\"") &&
+      !lowerHtml.includes("data-klaro");
+
+    if (hasUnblockedTracking) {
+      hasExplicitPriorConsent = false;
+    }
+
+    // Re-open / Withdrawal mechanism check
+    if (
+      lowerHtml.includes("manage cookie") ||
+      lowerHtml.includes("cookie settings") ||
+      lowerHtml.includes("privacy preferences") ||
+      lowerHtml.includes("open-cookie-settings") ||
+      lowerHtml.includes("re-open consent") ||
+      lowerHtml.includes("manage consent")
+    ) {
+      hasConsentWithdrawalMechanism = true;
+    }
+
+    // Calculate Cookie Consent Score (0-100)
+    let cookieScore = 0;
+    const missingConsentAdvice: string[] = [];
+
     if (hasCookieConsent) {
-      cookieDetails = `Active user consent banner verified (${cookieProvider}). Complies with UK GDPR / PECR guidelines.`;
+      cookieScore += 30; // Base banner presence
+      if (hasRejectAll) cookieScore += 25;
+      else {
+        missingConsentAdvice.push(
+          "Missing explicit 'Reject All' / 'Decline Non-Essential' button on the first layer of the banner. UK ICO and EDPB guidelines mandate that rejecting cookies must require no more clicks or visual effort than accepting."
+        );
+      }
+
+      if (hasGranularSettings) cookieScore += 20;
+      else {
+        missingConsentAdvice.push(
+          "Missing granular cookie category controls. Visitors must have the ability to toggle individual categories (Analytics, Marketing, Preferences) rather than being forced into a binary all-or-nothing choice."
+        );
+      }
+
+      if (hasGoogleConsentModeV2) cookieScore += 15;
+      else {
+        missingConsentAdvice.push(
+          "Missing Google Consent Mode v2 default 'denied' configuration (`analytics_storage`, `ad_storage`, `ad_user_data`, `ad_personalization`). Without this, conversion tracking and audience modeling in Google Ads/GA4 are restricted in the UK & EEA."
+        );
+      }
+
+      if (hasCookiePolicyLink) cookieScore += 10;
+      else {
+        missingConsentAdvice.push(
+          "The consent banner should include a direct hyperlink to an accessible, itemized Cookie Policy explaining cookie purposes and durations."
+        );
+      }
+
+      if (!hasConsentWithdrawalMechanism) {
+        missingConsentAdvice.push(
+          "Missing persistent cookie settings widget or footer link. Under GDPR Art. 7(3), withdrawing consent must be as easy as giving it at any time during browsing."
+        );
+      }
+
+      if (!hasExplicitPriorConsent) {
+        cookieScore = Math.max(20, cookieScore - 20);
+        missingConsentAdvice.push(
+          "Third-party tracking scripts (Analytics / Ads Pixels) appear to fire before explicit user consent. Non-essential cookies must be blocked or held in 'denied' state until consent is granted."
+        );
+      }
     } else {
-      cookieDetails = "Missing Cookie Consent banner or Google Consent Mode v2 default 'denied' signals.";
+      missingConsentAdvice.push(
+        "No Cookie Consent banner or CMP detected. Under UK GDPR and PECR Regulation 6, you must obtain prior opt-in consent before setting non-essential cookies (analytics, ads, tracking pixels)."
+      );
+      missingConsentAdvice.push(
+        "Implement a Cookie Management Platform (CMP) or custom banner with Google Consent Mode v2 default 'denied' parameters."
+      );
+    }
+
+    let cookieStatus: "pass" | "warning" | "fail" = "pass";
+    let cookieDetails = "";
+
+    if (!hasCookieConsent) {
+      cookieStatus = "fail";
+      cookieDetails = "No cookie consent mechanism or Google Consent Mode v2 default 'denied' signals detected in markup.";
+    } else if (cookieScore < 70 || missingConsentAdvice.length > 1) {
+      cookieStatus = "warning";
+      cookieDetails = `Cookie banner detected (${cookieProvider}), but missing key GDPR/PECR compliance settings (${missingConsentAdvice.length} recommendations).`;
+    } else {
+      cookieStatus = "pass";
+      cookieDetails = `Active user consent banner verified (${cookieProvider}). Fully aligned with UK GDPR, PECR, and Google Consent Mode v2.`;
     }
 
     // ------------------------------------------------------------------------
-    // 6. Protocol, Canonical & Compression Audit
+    // 8. Legal Pages & GDPR Compliance Audit (Privacy, Cookies, Terms, AUP, Contact)
+    // ------------------------------------------------------------------------
+    const legalPagesAudited: HealthScanResult["legalPages"]["pages"] = [
+      {
+        id: "privacy-policy",
+        name: "Privacy Policy / Data Protection Notice",
+        found: Boolean(discoveredPrivacyPageUrl),
+        url: discoveredPrivacyPageUrl,
+        status: discoveredPrivacyPageUrl ? "pass" : "fail",
+        requiredBy: "UK GDPR (Articles 13 & 14) and EU GDPR Regulation (EU) 2016/679",
+        summary: "Mandatory legal notice informing data subjects how personal information is collected, processed, stored, and protected.",
+        mandatoryInclusions: [
+          "Data Controller legal name, company registration number, and registered office address",
+          "Specified lawful basis for each processing purpose under GDPR Article 6 (Consent, Contract, Legitimate Interests, Legal Obligation)",
+          "Data retention schedules or concrete criteria used to determine retention periods",
+          "Comprehensive list of Data Subject Rights (Access, Rectification, Erasure, Restriction, Portability, and Objection)",
+          "International data transfer mechanisms & safeguards (UK IDTA / EU Standard Contractual Clauses) if third-party cloud services are used",
+          "Explicit notice informing data subjects of their statutory right to lodge a complaint with the ICO (UK) or EU supervisory authority",
+        ],
+        missingAdvice: discoveredPrivacyPageUrl
+          ? []
+          : [
+              "Missing publicly accessible Privacy Policy. Under UK GDPR and EU GDPR, failure to provide a compliant privacy notice exposes the organisation to regulatory enforcement notices and statutory fines up to £17.5M / 4% of annual global turnover.",
+              "Create and publish a dedicated Privacy Policy route (e.g. `/privacy-policy`) linked in your primary navigation or footer.",
+            ],
+      },
+      {
+        id: "cookie-policy",
+        name: "Cookie Policy & Declaration",
+        found: Boolean(discoveredCookiePolicyUrl),
+        url: discoveredCookiePolicyUrl,
+        status: discoveredCookiePolicyUrl ? "pass" : "fail",
+        requiredBy: "UK Privacy and Electronic Communications Regulations (PECR) & EU ePrivacy Directive 2002/58/EC",
+        summary: "Itemized breakdown of all first-party and third-party cookies, tracking pixels, and local storage mechanisms.",
+        mandatoryInclusions: [
+          "Clear explanation of what cookies, local storage, and tracking pixels are",
+          "Itemized Cookie Inventory table detailing: Cookie Name, Provider/Domain, Category (Strictly Necessary, Analytics, Marketing), Purpose, and Lifespan/Duration",
+          "Detailed explanation of how user consent is recorded and updated (including Google Consent Mode v2 signals)",
+          "Step-by-step instructions on how visitors can change preferences or revoke consent at any time",
+          "Browser-specific instructions for blocking, disabling, or deleting cookies via Chrome, Safari, Firefox, and Edge",
+        ],
+        missingAdvice: discoveredCookiePolicyUrl
+          ? []
+          : [
+              "Missing dedicated Cookie Policy. PECR Regulation 6 mandates that users must be provided with clear and comprehensive information regarding storage and access to cookies on their terminal equipment.",
+              "Publish an accessible Cookie Policy (e.g. `/cookie-policy`) containing a complete, transparent table of cookies used on your web application.",
+            ],
+      },
+      {
+        id: "terms-of-service",
+        name: "Terms of Service / Terms & Conditions",
+        found: Boolean(discoveredTermsPageUrl),
+        url: discoveredTermsPageUrl,
+        status: discoveredTermsPageUrl ? "pass" : "fail",
+        requiredBy: "UK Electronic Commerce Regulations 2002, Consumer Rights Act 2015 & Commercial Contract Law",
+        summary: "Legally binding agreement defining terms of access, user obligations, intellectual property rights, and liability limits.",
+        mandatoryInclusions: [
+          "Scope of services, user eligibility criteria, and account registration responsibilities",
+          "Intellectual Property (IP) ownership, copyright, trademarks, proprietary software rights, and licensing terms",
+          "Permitted and prohibited use of the website and developer tools (anti-scraping, anti-abuse)",
+          "Enforceable Limitation of Liability and Warranty Disclaimers compliant with the Unfair Contract Terms Act 1977",
+          "Governing Law & Jurisdiction clause (e.g. 'These terms shall be governed by and construed in accordance with the laws of England and Wales')",
+          "Procedures for amendments, termination of service, and dispute resolution",
+        ],
+        missingAdvice: discoveredTermsPageUrl
+          ? []
+          : [
+              "No Terms of Service detected. Without published Terms of Service, your business operates without legal protection against user misuse, liability claims, intellectual property infringement, or commercial disputes.",
+              "Publish standard Terms of Service (e.g. `/terms-of-service`) covering acceptable use, liability limitations, and governing jurisdiction.",
+            ],
+      },
+      {
+        id: "acceptable-use",
+        name: "Acceptable Use Policy & Legal Notice / Impressum",
+        found: Boolean(discoveredAcceptableUseUrl),
+        url: discoveredAcceptableUseUrl,
+        status: discoveredAcceptableUseUrl ? "pass" : "warning",
+        requiredBy: "EU Digital Services Act (DSA), UK Computer Misuse Act & German Digitale-Dienste-Gesetz (§ 5 DDG / TMG)",
+        summary: "Rules governing prohibited technical behaviour, security testing boundaries, and corporate statutory disclosures.",
+        mandatoryInclusions: [
+          "Prohibited security activities (unauthorized vulnerability scanning, DDoS, SQL injection, automated scraping, malware distribution)",
+          "Legal Notice / Impressum (mandatory for EU/DACH web entities): Full registered company name, commercial register number, VAT identification number, managing director names",
+          "Vulnerability reporting policy and security disclosure contact (e.g. security@domain or `/.well-known/security.txt`)",
+        ],
+        missingAdvice: discoveredAcceptableUseUrl
+          ? []
+          : [
+              "Missing published Acceptable Use Policy or Legal Notice. Clearly defining acceptable use protects your digital infrastructure under the Computer Misuse Act and prevents platform abuse.",
+              "Publish an Acceptable Use Policy (e.g. `/acceptable-use`) and provide security disclosure contact details.",
+            ],
+      },
+      {
+        id: "contact-details",
+        name: "Contact Page & Data Controller Identification",
+        found: Boolean(discoveredContactPageUrl || contactPageInfo?.found),
+        url: discoveredContactPageUrl || contactPageInfo?.url,
+        status: (discoveredContactPageUrl || contactPageInfo?.found) ? "pass" : "warning",
+        requiredBy: "UK Companies Act 2006, E-Commerce Regulations & GDPR Art. 13(1)(a)",
+        summary: "Direct electronic and physical contact coordinates for user inquiries, statutory notices, and Subject Access Requests (SARs).",
+        mandatoryInclusions: [
+          "Direct, rapid electronic communication method (active contact form or monitored support email)",
+          "Registered company name, physical business address, and company registration number",
+          "Designated privacy inquiry contact or Data Protection Officer (DPO) details for Subject Access Requests (SARs)",
+        ],
+        missingAdvice: (discoveredContactPageUrl || contactPageInfo?.found)
+          ? []
+          : [
+              "No dedicated contact page or company identification discovered in site navigation. Under UK Companies Act & GDPR, website operators must provide clear contact channels and legal corporate details.",
+            ],
+      },
+    ];
+
+    const totalLegalFound = legalPagesAudited.filter((p) => p.found).length;
+    const totalLegalChecked = legalPagesAudited.length;
+    const legalPagesScore = Math.round((totalLegalFound / totalLegalChecked) * 100);
+
+    let legalPagesStatus: "pass" | "warning" | "fail" = "pass";
+    let legalPagesMessage = `Discovered ${totalLegalFound} of ${totalLegalChecked} essential legal compliance pages in navigation.`;
+
+    if (totalLegalFound <= 1) {
+      legalPagesStatus = "fail";
+      legalPagesMessage = `Critical legal non-compliance: Only ${totalLegalFound} of ${totalLegalChecked} essential legal pages found. High regulatory risk under UK GDPR / PECR.`;
+    } else if (totalLegalFound < 4) {
+      legalPagesStatus = "warning";
+      legalPagesMessage = `${totalLegalChecked - totalLegalFound} essential legal pages are missing from site navigation (${legalPagesAudited.filter(p => !p.found).map(p => p.name).join(", ")}).`;
+    }
+
+    const legalPagesSummary = totalLegalFound === totalLegalChecked
+      ? "All standard regulatory and statutory legal pages (Privacy Policy, Cookie Policy, Terms of Service, Acceptable Use, and Contact) are published and accessible."
+      : `Missing ${totalLegalChecked - totalLegalFound} legal compliance page(s). To comply with UK GDPR, EU GDPR, and PECR, publish all missing legal documentation linked in the footer.`;
+
+    // ------------------------------------------------------------------------
+    // 9. Protocol, Canonical & Compression Audit
     // ------------------------------------------------------------------------
     const canonicalMatch = html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i);
     const canonicalUrl = canonicalMatch ? canonicalMatch[1] : undefined;
@@ -721,39 +1159,48 @@ export async function POST(req: Request) {
     }
 
     // ------------------------------------------------------------------------
-    // 7. Overall Health Score Calculation
+    // 10. Overall Health Score Calculation
     // ------------------------------------------------------------------------
     let score = 100;
 
-    // Headings & Images (25 pts)
-    if (headingsStatus === "fail") score -= 15;
-    else if (headingsStatus === "warning") score -= 7;
+    // Headings & Images (20 pts)
+    if (headingsStatus === "fail") score -= 12;
+    else if (headingsStatus === "warning") score -= 5;
 
-    if (imagesStatus === "fail") score -= 10;
-    else if (imagesStatus === "warning") score -= 5;
+    if (imagesStatus === "fail") score -= 8;
+    else if (imagesStatus === "warning") score -= 4;
 
-    // Forms, Contact Page & Privacy (25 pts)
+    // Forms & Bot Defense (15 pts)
     if (formsCount > 0) {
-      if (!hasCaptcha) score -= 10;
+      if (!hasCaptcha) score -= 8;
     } else if (contactPageInfo && contactPageInfo.found) {
       if (contactPageInfo.hasForm && !contactPageInfo.hasCaptcha) {
-        score -= 5;
+        score -= 4;
       }
     } else {
-      score -= 5; // Slight deduction if no on-page form AND no contact page discovered
+      score -= 4;
     }
 
-    if (!hasCookieConsent) score -= 10;
+    // Cookie Consent Settings (20 pts)
+    if (!hasCookieConsent) score -= 20;
+    else if (cookieScore < 70) score -= 10;
+    else if (cookieScore < 90) score -= 4;
 
-    // Links (25 pts)
-    if (deadLinksCount > 0) score -= 15;
-    if (emptyOrVoidCount > 3) score -= 5;
-    if (insecureTargetBlankCount > 0) score -= 5;
+    // Legal Pages Compliance (20 pts)
+    if (!discoveredPrivacyPageUrl) score -= 8;
+    if (!discoveredCookiePolicyUrl) score -= 5;
+    if (!discoveredTermsPageUrl) score -= 4;
+    if (totalLegalFound < 3) score -= 3;
 
-    // Protocol & Speed (25 pts)
-    if (!isHttps) score -= 15;
-    if (!canonicalUrl) score -= 5;
-    if (responseTimeMs > 1500) score -= 5;
+    // Links & Anchors (15 pts)
+    if (deadLinksCount > 0) score -= 10;
+    if (emptyOrVoidCount > 3) score -= 3;
+    if (insecureTargetBlankCount > 0) score -= 2;
+
+    // Protocol & Speed (10 pts)
+    if (!isHttps) score -= 10;
+    if (!canonicalUrl) score -= 3;
+    if (responseTimeMs > 1500) score -= 3;
 
     const overallScore = Math.max(0, Math.min(100, Math.round(score)));
 
@@ -765,7 +1212,7 @@ export async function POST(req: Request) {
     else if (overallScore >= 50) grade = "D";
 
     // ------------------------------------------------------------------------
-    // 8. Dynamic Sister Tool Recommendations
+    // 11. Dynamic Sister Tool Recommendations
     // ------------------------------------------------------------------------
     const sisterToolRecommendations: HealthScanResult["sisterToolRecommendations"] = [];
 
@@ -809,36 +1256,104 @@ export async function POST(req: Request) {
     }
 
     // ------------------------------------------------------------------------
-    // 9. Remediation Code Snippets
+    // 12. Remediation Code Snippets (Consent Mode v2, Cookie Table, GDPR Privacy, etc.)
     // ------------------------------------------------------------------------
     const remediationSnippets: HealthScanResult["remediationSnippets"] = [
       {
+        id: "google-consent-mode-v2",
+        title: "Google Consent Mode v2 & Cookie Banner Implementation",
+        category: "GDPR & Consent Mode v2",
+        snippet: `<!-- 1. Place in <head> BEFORE Google Tag Manager or gtag.js -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  // Default to denied for EU/UK GDPR compliance
+  gtag('consent', 'default', {
+    'analytics_storage': 'denied',
+    'ad_storage': 'denied',
+    'ad_user_data': 'denied',
+    'ad_personalization': 'denied',
+    'wait_for_update': 500
+  });
+</script>
+
+<!-- 2. Execute when user clicks 'Accept All' -->
+<script>
+  function onUserAcceptAll() {
+    gtag('consent', 'update', {
+      'analytics_storage': 'granted',
+      'ad_storage': 'granted',
+      'ad_user_data': 'granted',
+      'ad_personalization': 'granted'
+    });
+    localStorage.setItem('cookie_consent', 'all');
+  }
+</script>`,
+        explanation: "Since March 2024, Google requires Consent Mode v2 (`ad_user_data`, `ad_personalization`) with default 'denied' parameters for all web traffic in the UK and EEA.",
+      },
+      {
+        id: "cookie-inventory-table",
+        title: "PECR Compliant Cookie Policy Inventory Table",
+        category: "Cookie Policy (PECR)",
+        snippet: `<table class="cookie-inventory">
+  <thead>
+    <tr>
+      <th>Cookie Name</th>
+      <th>Provider / Host</th>
+      <th>Category</th>
+      <th>Purpose</th>
+      <th>Lifespan</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>session_id</code></td>
+      <td>${domain}</td>
+      <td>Strictly Necessary</td>
+      <td>Maintains encrypted user authentication session.</td>
+      <td>Session</td>
+    </tr>
+    <tr>
+      <td><code>_ga, _ga_*</code></td>
+      <td>Google Analytics 4</td>
+      <td>Analytics</td>
+      <td>Aggregated visitor metrics (Held in 'denied' until opt-in).</td>
+      <td>2 Years</td>
+    </tr>
+  </tbody>
+</table>`,
+        explanation: "PECR Regulation 6 requires an itemized breakdown of all cookies, distinguishing strictly necessary cookies from non-essential tracking cookies.",
+      },
+      {
+        id: "gdpr-privacy-structure",
+        title: "UK / EU GDPR Compliant Privacy Notice Blueprint",
+        category: "Privacy Policy (Art. 13/14)",
+        snippet: `<!-- Privacy Notice Standard Article 13/14 Sections -->
+<section>
+  <h2>1. Data Controller Identity</h2>
+  <p><strong>${domain}</strong>, Company Reg: [NUMBER], Registered Office: [ADDRESS], Email: privacy@${domain}</p>
+
+  <h2>2. Lawful Basis for Processing (GDPR Art. 6)</h2>
+  <p>We process personal data under Consent (Art. 6(1)(a)), Contract Performance (Art. 6(1)(b)), and Legitimate Interests (Art. 6(1)(f)).</p>
+
+  <h2>3. Data Subject Rights &amp; Supervisory Authority</h2>
+  <p>You have the right to access, rectify, or erase your data. You may lodge a complaint with the Information Commissioner's Office (ICO) at <a href="https://ico.org.uk">ico.org.uk</a>.</p>
+</section>`,
+        explanation: "A valid GDPR Privacy Notice must specify the data controller identity, lawful basis under Article 6, retention schedules, data subject rights, and the right to lodge a complaint with the ICO.",
+      },
+      {
         id: "canonical-html",
-        title: "Canonical URL Tag (HTML5)",
+        title: "Canonical URL Normalisation Tag",
         category: "SEO & Structure",
         snippet: `<link rel="canonical" href="https://${domain}/" />`,
         explanation: "Insert this inside the <head> section to prevent search engines from indexing duplicate URL parameters.",
       },
       {
         id: "image-alt-fix",
-        title: "Accessible Image Markup",
+        title: "Accessible Image Markup (WCAG 2.2)",
         category: "Accessibility & DOM",
         snippet: `<img src="/assets/logo.svg" alt="${domain} Company Logo" width="200" height="50" loading="lazy" />`,
         explanation: "Always provide descriptive alt text and explicit dimensions to improve Core Web Vitals and screen reader support.",
-      },
-      {
-        id: "heading-structure",
-        title: "Semantic Heading Cascade",
-        category: "HTML5 Hierarchy",
-        snippet: `<h1>${domain} — Main Value Proposition</h1>\n<h2>Key Software Services</h2>\n<h3>Enterprise Web Architecture</h3>`,
-        explanation: "Maintain a single H1 tag per page followed by logical H2 section headings and H3 subsections.",
-      },
-      {
-        id: "recaptcha-integration",
-        title: "Google reCAPTCHA v3 Form Defense",
-        category: "Bot Defense",
-        snippet: `<form action="/api/contact" method="POST">\n  <!-- Interactive Form Inputs -->\n  <input type="hidden" name="recaptchaToken" id="recaptchaToken" />\n  <button type="submit">Send Message</button>\n</form>`,
-        explanation: "Guard public contact forms against automated spam bots and DDoS probing with background score verification.",
       },
     ];
 
@@ -848,7 +1363,7 @@ export async function POST(req: Request) {
       timestamp: new Date().toISOString(),
       overallScore,
       grade,
-      summary: `Completed passive website health and structural audit for ${domain}. Evaluated headings, images, forms, links, and protocol compliance.`,
+      summary: `Completed comprehensive website health, legal compliance, and structure audit for ${domain}. Evaluated headings, images, forms, cookie consent settings, legal pages, links, and protocol compliance.`,
       metrics: {
         totalLinks,
         internalLinks: internalLinksCount,
@@ -863,13 +1378,18 @@ export async function POST(req: Request) {
         formsCount,
         hasCaptcha,
         hasCookieConsent,
+        cookieConsentScore: cookieScore,
+        legalPagesCount: totalLegalFound,
+        privacyPolicyFound: Boolean(discoveredPrivacyPageUrl),
+        cookiePolicyFound: Boolean(discoveredCookiePolicyUrl),
+        termsFound: Boolean(discoveredTermsPageUrl),
+        contactPageFound: Boolean(discoveredContactPageUrl || contactPageInfo?.found),
         responseTimeMs,
         statusCode,
         isHttps,
         hasCanonical: Boolean(canonicalUrl),
         compression,
-        contactPageFound: Boolean(contactPageInfo?.found),
-        contactPageUrl: contactPageInfo?.url,
+        contactPageUrl: contactPageInfo?.url || discoveredContactPageUrl,
       },
       headings: {
         h1: h1Matches,
@@ -897,8 +1417,25 @@ export async function POST(req: Request) {
       cookieConsent: {
         detected: hasCookieConsent,
         provider: cookieProvider,
+        hasRejectAll,
+        hasGranularSettings,
+        hasGoogleConsentModeV2,
+        hasExplicitPriorConsent,
+        hasCookiePolicyLink,
+        hasConsentWithdrawalMechanism,
+        score: cookieScore,
+        status: cookieStatus,
         details: cookieDetails,
-        status: hasCookieConsent ? "pass" : "warning",
+        missingAdvice: missingConsentAdvice,
+      },
+      legalPages: {
+        totalFound: totalLegalFound,
+        totalChecked: totalLegalChecked,
+        score: legalPagesScore,
+        status: legalPagesStatus,
+        message: legalPagesMessage,
+        summary: legalPagesSummary,
+        pages: legalPagesAudited,
       },
       links: {
         total: totalLinks,

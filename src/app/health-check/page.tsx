@@ -20,6 +20,8 @@ import {
   Code2,
   ShieldCheck,
   Bot,
+  Scale,
+  FileText,
 } from "lucide-react";
 import { HealthScannerWidget } from "@/components/HealthScannerWidget";
 
@@ -48,10 +50,16 @@ function HealthCheckContent() {
       badge: "Lead Security",
     },
     {
-      title: "Cookie Consent & Privacy Framework",
-      desc: "Detects active user consent banners (OneTrust, Cookiebot, Klaro, Google Consent Mode v2) for UK GDPR and PECR regulatory compliance.",
+      title: "Cookie Consent & Consent Mode v2",
+      desc: "Detects active CMP banners, explicit Reject All buttons, granular category toggles, and Google Consent Mode v2 default 'denied' signals.",
       icon: Cookie,
-      badge: "GDPR Privacy",
+      badge: "PECR & ePrivacy",
+    },
+    {
+      title: "Mandatory Legal Pages Audit",
+      desc: "Verifies public availability of essential legal routes (Privacy Policy, Cookie Policy, Terms of Service, Acceptable Use, and Contact) under UK GDPR.",
+      icon: Scale,
+      badge: "GDPR Compliance",
     },
     {
       title: "Link Architecture & Dead Link Check",
@@ -59,30 +67,28 @@ function HealthCheckContent() {
       icon: Layers,
       badge: "Crawlability",
     },
-    {
-      title: "HTTP Standards & Protocol Hygiene",
-      desc: "Evaluates HTTPS transport security, server response latency, Brotli/gzip compression, and canonical URL normalization.",
-      icon: Zap,
-      badge: "Core Vitals",
-    },
   ];
 
   const faqs = [
     {
-      q: "What is the Website Health & Structure Audit Tool?",
-      a: "Our Website Health Tool provides a fast, passive browser-based inspection of key webpage health indicators including heading hierarchy (H1–H3), image alt text accessibility, interactive form health, bot defense (reCAPTCHA), cookie consent compliance, dead links, and HTTP performance standards.",
+      q: "What does the Website Health & Compliance Audit check?",
+      a: "Our Website Health Tool provides a comprehensive, passive inspection of key webpage health indicators including H1–H3 heading hierarchy, image alt text accessibility, contact form endpoints, reCAPTCHA bot defense, Cookie Consent settings (Reject All, Consent Mode v2), mandatory legal pages (Privacy Policy, Cookie Declaration, Terms of Service, Acceptable Use), broken 404 links, and HTTP performance standards.",
     },
     {
-      q: "Why is a single <h1> tag important?",
-      a: "HTML5 standards and major search engines (Google, Bing) rely on a single, prominent <h1> tag to establish the primary topic and semantic entity of the page. Multiple competing <h1> tags or missing <h1> elements dilute relevance and confuse assistive technologies.",
+      q: "Why is Google Consent Mode v2 mandatory for UK and EU websites?",
+      a: "Since March 2024, Google requires Google Consent Mode v2 (specifically ad_storage, analytics_storage, ad_user_data, and ad_personalization default 'denied' tags) for any site using Google Analytics 4 or Google Ads in the UK and EEA. Without these signals, conversion tracking and audience modeling are blocked or degraded.",
+    },
+    {
+      q: "What legal pages must a website have to comply with GDPR and local laws?",
+      a: "Under UK GDPR, EU GDPR, PECR, and consumer protection regulations, commercial websites must provide: (1) A Privacy Policy detailing the Data Controller identity, lawful basis under Article 6, retention schedules, data subject rights, and ICO complaint notice; (2) A Cookie Policy with an itemized cookie inventory and withdrawal instructions; (3) Terms of Service governing liability and jurisdiction; (4) An Acceptable Use Policy / Impressum; and (5) Direct corporate contact information.",
+    },
+    {
+      q: "Why is an explicit 'Reject All' button required on cookie banners?",
+      a: "Under EDPB guidelines and UK Information Commissioner's Office (ICO) enforcement, refusing non-essential cookies must require no more clicks or visual effort than accepting. Banners with only an 'Accept' button or hiding rejection inside complex submenus violate GDPR and PECR consent standards.",
     },
     {
       q: "How does the tool test for broken or dead links?",
       a: "The scanner parses all anchor tags (<a href='...'>), categorises them into internal vs external links, flags placeholder void links (href='#' or href='javascript:void(0)'), and performs lightweight asynchronous HEAD probes against sample links to detect 404 Not Found or 500 Server Errors.",
-    },
-    {
-      q: "Why should public contact forms have reCAPTCHA or Turnstile?",
-      a: "Unprotected public contact forms are vulnerable to automated bot spam, credential stuffing, and email inbox flooding. Integrating invisible Google reCAPTCHA v3 or Cloudflare Turnstile verifies human interaction without degrading user experience.",
     },
     {
       q: "How does this tool connect with your other diagnostic scanners?",
@@ -100,7 +106,7 @@ function HealthCheckContent() {
           className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold uppercase tracking-wider"
         >
           <Activity className="w-3.5 h-3.5" />
-          <span>Web Page Health, DOM Semantics &amp; Structure Inspector</span>
+          <span>Web Health, Cookie Consent &amp; Legal Compliance Inspector</span>
         </motion.div>
 
         <motion.h1
@@ -109,9 +115,9 @@ function HealthCheckContent() {
           transition={{ delay: 0.1 }}
           className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground leading-tight"
         >
-          Website Health, DOM Semantics &amp;{" "}
+          Website Health, GDPR Legal &amp;{" "}
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-[#00f0ff] to-[#7000ff]">
-            Link Audit
+            Consent Audit
           </span>
         </motion.h1>
 
@@ -121,7 +127,7 @@ function HealthCheckContent() {
           transition={{ delay: 0.2 }}
           className="text-sm md:text-base text-muted-foreground leading-relaxed"
         >
-          Comprehensive passive health check for modern web applications. Audit H1–H3 heading hierarchy, image alt accessibility, contact form endpoints, reCAPTCHA bot defense, cookie consent banners, and HTTP protocol standards.
+          Comprehensive passive health check for modern web applications. Audit H1–H3 heading hierarchy, image alt accessibility, contact form endpoints, Cookie Consent settings (Google Consent Mode v2 &amp; Reject All), mandatory legal pages (Privacy, Cookies, Terms), and HTTP protocol standards.
         </motion.p>
       </div>
 
@@ -134,10 +140,10 @@ function HealthCheckContent() {
       <div className="space-y-8">
         <div className="text-center space-y-2 max-w-2xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-            Six Core Pillars of Web Page Health
+            Six Core Pillars of Web Page Health &amp; Compliance
           </h2>
           <p className="text-muted-foreground text-xs md:text-sm">
-            Everything search engines, screen readers, and modern web browsers evaluate when crawling your web applications.
+            Everything search engines, screen readers, data protection authorities, and modern browsers evaluate when inspecting your site.
           </p>
         </div>
 
@@ -183,7 +189,7 @@ function HealthCheckContent() {
               Explore Our Complete Audit Ecosystem
             </h3>
             <p className="text-muted-foreground text-xs md:text-sm max-w-2xl leading-relaxed">
-              Combine Website Health checks with AI Engine Optimization (AEO/GEO), MITRE CVE vulnerability scanning, and 2026 OWASP Top 10 security compliance.
+              Combine Website Health &amp; GDPR compliance checks with AI Engine Optimization (AEO/GEO), MITRE CVE vulnerability scanning, and 2026 OWASP Top 10 security compliance.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
@@ -220,7 +226,7 @@ function HealthCheckContent() {
             Frequently Asked Questions
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-            Website Health & Architecture FAQs
+            Website Health, Legal &amp; Consent FAQs
           </h2>
         </div>
 

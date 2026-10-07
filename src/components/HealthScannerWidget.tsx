@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,6 +29,10 @@ import {
   ShieldCheck,
   Send,
   HelpCircle,
+  Scale,
+  FileText,
+  CheckCheck,
+  X,
 } from "lucide-react";
 import type { HealthScanResult } from "@/app/api/health-scan/route";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
@@ -55,11 +59,14 @@ export function HealthScannerWidget({
   const [result, setResult] = useState<HealthScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "headings" | "forms" | "links" | "protocol" | "fixes" | "tools"
+    "overview" | "headings" | "forms" | "compliance" | "links" | "protocol" | "fixes" | "tools"
   >("overview");
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
   const [quota, setQuota] = useState(DEFAULT_SCAN_QUOTA);
   const { executeRecaptcha } = useGoogleReCaptcha();
+
+  const tabMenuRef = useRef<HTMLDivElement>(null);
+  const resultsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setQuota(getScanQuota());
@@ -71,8 +78,9 @@ export function HealthScannerWidget({
     "Inspecting H1, H2, H3 hierarchy & document semantic structure...",
     "Auditing image alt attributes & media accessibility standards...",
     "Scanning interactive contact forms & reCAPTCHA / Turnstile defense...",
-    "Checking Cookie Consent banner & Google Consent Mode v2 signals...",
-    "Synthesising website health score & architectural recommendations...",
+    "Verifying Cookie Consent settings, Reject All & Google Consent Mode v2...",
+    "Auditing mandatory legal pages (Privacy, Cookies, Terms, Impressum)...",
+    "Synthesising website health score & compliance recommendations...",
   ];
 
   const handleScan = async (e?: React.FormEvent, overrideUrl?: string) => {
@@ -98,7 +106,7 @@ export function HealthScannerWidget({
 
     const stepInterval = setInterval(() => {
       setLoadingStep((prev) => (prev < loadingSteps.length - 1 ? prev + 1 : prev));
-    }, 650);
+    }, 600);
 
     try {
       let token = "";
@@ -125,12 +133,33 @@ export function HealthScannerWidget({
         setResult(data);
         const updated = recordScanUsage(target);
         setQuota(updated);
+
+        // Smoothly bring the top of the results into view (anchored on score and tab bar)
+        setTimeout(() => {
+          if (resultsContainerRef.current) {
+            const rect = resultsContainerRef.current.getBoundingClientRect();
+            const targetY = window.scrollY + rect.top - 80;
+            window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+          }
+        }, 120);
       }
     } catch {
       clearInterval(stepInterval);
       setError("Network or scanner error occurred. Please check your internet connection.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTabChange = (tabId: typeof activeTab) => {
+    setActiveTab(tabId);
+    // Ensure the page stays anchored at the tab menu so user does not jump to bottom or get lost
+    if (tabMenuRef.current) {
+      const rect = tabMenuRef.current.getBoundingClientRect();
+      if (rect.top < 75 || rect.top > 250) {
+        const targetY = window.scrollY + rect.top - 85;
+        window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+      }
     }
   };
 
@@ -166,13 +195,13 @@ export function HealthScannerWidget({
           <div className="mb-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-3">
               <Activity className="w-3.5 h-3.5 animate-pulse" />
-              HTML5 Semantics, Link Health &amp; Protocol Inspector
+              HTML5 Semantics, Cookie Consent &amp; Legal Compliance Inspector
             </div>
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-              Website Health & Structure Audit
+              Website Health &amp; Compliance Audit
             </h2>
             <p className="text-muted-foreground text-sm mt-1">
-              Passive audit of H1–H3 headings, image alt attributes, contact forms, reCAPTCHA bot defense, cookie consent, dead links, and HTTP standards.
+              Comprehensive passive audit of H1–H3 headings, image alt accessibility, contact forms, Cookie Consent settings, legal pages (GDPR / PECR), dead links, and HTTP standards.
             </p>
           </div>
         )}
@@ -265,7 +294,7 @@ export function HealthScannerWidget({
             </div>
             <div className="space-y-2 max-w-md">
               <p className="font-semibold text-foreground text-sm md:text-base">
-                Scanning Website Architecture & HTML Hygiene
+                Scanning Website Architecture &amp; Legal Hygiene
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {loadingSteps[loadingStep]}
@@ -283,6 +312,7 @@ export function HealthScannerWidget({
         {/* Results Panel */}
         {result && !loading && (
           <motion.div
+            ref={resultsContainerRef}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             className="mt-8 space-y-6"
@@ -397,24 +427,24 @@ export function HealthScannerWidget({
                   <Cookie className="w-3.5 h-3.5 text-amber-400" />
                   Cookie Consent
                 </span>
-                <p className="text-base font-bold text-foreground">
-                  {result.cookieConsent.detected ? "Active CMP" : "Not Found"}
+                <p className="text-base font-bold text-foreground truncate">
+                  {result.cookieConsent.detected ? result.cookieConsent.provider : "Missing Banner"}
                 </p>
-                <span className={`text-[10px] font-semibold ${result.cookieConsent.detected ? "text-emerald-400" : "text-amber-400"}`}>
-                  {result.cookieConsent.detected ? "✓ GDPR Ready" : "⚠ Missing Banner"}
+                <span className={`text-[10px] font-semibold ${result.cookieConsent.status === "pass" ? "text-emerald-400" : result.cookieConsent.status === "warning" ? "text-amber-400" : "text-rose-400"}`}>
+                  {result.cookieConsent.status === "pass" ? "✓ GDPR & PECR Pass" : result.cookieConsent.status === "warning" ? `⚠ Score ${result.cookieConsent.score}/100` : "✕ Non-Compliant"}
                 </span>
               </div>
 
               <div className="p-3.5 rounded-xl bg-secondary/20 border border-white/5 space-y-1">
                 <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-emerald-400" />
-                  Link Hygiene
+                  <Scale className="w-3.5 h-3.5 text-teal-400" />
+                  Legal Pages
                 </span>
                 <p className="text-base font-bold text-foreground">
-                  {result.metrics.totalLinks} Links
+                  {result.legalPages.totalFound} / {result.legalPages.totalChecked} Found
                 </p>
-                <span className={`text-[10px] font-semibold ${result.metrics.deadLinksCount === 0 ? "text-emerald-400" : "text-rose-400"}`}>
-                  {result.metrics.deadLinksCount === 0 ? "✓ 0 Dead Links" : `✕ ${result.metrics.deadLinksCount} Broken`}
+                <span className={`text-[10px] font-semibold ${result.legalPages.status === "pass" ? "text-emerald-400" : result.legalPages.status === "warning" ? "text-amber-400" : "text-rose-400"}`}>
+                  {result.legalPages.status === "pass" ? "✓ Full Compliance" : result.legalPages.status === "warning" ? `⚠ ${result.legalPages.totalChecked - result.legalPages.totalFound} Missing` : "✕ Critical Deficit"}
                 </span>
               </div>
 
@@ -432,12 +462,16 @@ export function HealthScannerWidget({
               </div>
             </div>
 
-            {/* Slick Single-Line Navigation Tabs */}
-            <div className="flex items-center gap-1 p-1 bg-secondary/40 border border-white/10 rounded-xl overflow-x-auto no-scrollbar">
+            {/* Navigation Tabs - Sticky Anchor Bar */}
+            <div
+              ref={tabMenuRef}
+              className="sticky top-20 z-20 flex items-center gap-1 p-1.5 bg-background/95 dark:bg-[#070514]/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-x-auto no-scrollbar shadow-lg shadow-black/20"
+            >
               {[
                 { id: "overview", label: "Overview", icon: Activity },
                 { id: "headings", label: `Headings & Images`, icon: Heading },
                 { id: "forms", label: `Forms & Security`, icon: ShieldCheck },
+                { id: "compliance", label: `Consent & Legal (GDPR)`, icon: Scale, badge: `${result.legalPages.totalFound}/${result.legalPages.totalChecked}` },
                 { id: "links", label: `Links (${result.metrics.totalLinks})`, icon: Layers },
                 { id: "protocol", label: "HTTP & Protocol", icon: Zap },
                 { id: "tools", label: `Sister Tools (${result.sisterToolRecommendations.length})`, icon: Sparkles },
@@ -448,7 +482,8 @@ export function HealthScannerWidget({
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                    type="button"
+                    onClick={() => handleTabChange(tab.id as typeof activeTab)}
                     className={`px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all cursor-pointer ${
                       isActive
                         ? "bg-[#00f0ff] text-black shadow-md shadow-[#00f0ff]/20"
@@ -456,7 +491,12 @@ export function HealthScannerWidget({
                     }`}
                   >
                     <Icon className="w-3.5 h-3.5" />
-                    {tab.label}
+                    <span>{tab.label}</span>
+                    {tab.badge && (
+                      <span className={`ml-1 text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isActive ? "bg-black/20 text-black" : "bg-white/10 text-muted-foreground"}`}>
+                        {tab.badge}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -499,7 +539,7 @@ export function HealthScannerWidget({
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-foreground flex items-center gap-2">
                           <ShieldCheck className="w-4 h-4 text-purple-400" />
-                          Interactive Forms & Bot Defense
+                          Interactive Forms &amp; Bot Defense
                         </span>
                         {result.forms.status === "pass" ? (
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -527,6 +567,71 @@ export function HealthScannerWidget({
                             <ArrowRight className="w-3 h-3" />
                           </button>
                         )}
+                      </div>
+                    </div>
+
+                    {/* Cookie Consent Summary */}
+                    <div className="p-5 rounded-xl bg-secondary/20 border border-white/5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foreground flex items-center gap-2">
+                          <Cookie className="w-4 h-4 text-amber-400" />
+                          Cookie Consent &amp; Privacy Settings
+                        </span>
+                        {result.cookieConsent.status === "pass" ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        ) : result.cookieConsent.status === "warning" ? (
+                          <AlertTriangle className="w-4 h-4 text-amber-400" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-rose-400" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {result.cookieConsent.details}
+                      </p>
+                      <div className="flex flex-wrap gap-2 pt-1 text-[11px]">
+                        <span className={`px-2.5 py-0.5 rounded-md border font-semibold ${result.cookieConsent.detected ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20"}`}>
+                          CMP: {result.cookieConsent.detected ? result.cookieConsent.provider : "Not Detected"}
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-md border font-semibold ${result.cookieConsent.hasRejectAll ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"}`}>
+                          Reject All Button: {result.cookieConsent.hasRejectAll ? "✓ Present" : "✕ Missing"}
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-md border font-semibold ${result.cookieConsent.hasGoogleConsentModeV2 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"}`}>
+                          Consent Mode v2: {result.cookieConsent.hasGoogleConsentModeV2 ? "✓ Configured" : "✕ Denied Signals Missing"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Legal Pages Summary */}
+                    <div className="p-5 rounded-xl bg-secondary/20 border border-white/5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foreground flex items-center gap-2">
+                          <Scale className="w-4 h-4 text-teal-400" />
+                          Mandatory Legal Pages (UK GDPR &amp; PECR)
+                        </span>
+                        {result.legalPages.status === "pass" ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        ) : result.legalPages.status === "warning" ? (
+                          <AlertTriangle className="w-4 h-4 text-amber-400" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-rose-400" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {result.legalPages.message}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {result.legalPages.pages.map((p) => (
+                          <span
+                            key={p.id}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold border flex items-center gap-1 ${
+                              p.found
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                            }`}
+                          >
+                            {p.found ? "✓" : "✕"} {p.name.split("/")[0].trim()}
+                          </span>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -645,7 +750,7 @@ export function HealthScannerWidget({
                 </div>
               )}
 
-              {/* TAB 3: FORMS & PRIVACY */}
+              {/* TAB 3: FORMS & BOT DEFENSE */}
               {activeTab === "forms" && (
                 <div className="space-y-4">
                   {/* Dedicated Contact Route Card */}
@@ -716,32 +821,285 @@ export function HealthScannerWidget({
                       </div>
                     )}
                   </div>
+                </div>
+              )}
 
-                  {/* Cookie Consent Details */}
-                  <div className="p-5 rounded-xl bg-secondary/20 border border-white/5 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-bold text-foreground flex items-center gap-2">
-                        <Cookie className="w-4 h-4 text-amber-400" />
-                        Cookie Consent & Privacy Framework
-                      </span>
-                      <span className={`px-2.5 py-0.5 rounded text-xs font-bold border ${result.cookieConsent.detected ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"}`}>
-                        {result.cookieConsent.detected ? "Compliant" : "Needs Review"}
+              {/* TAB 4: CONSENT & LEGAL COMPLIANCE (GDPR & PECR) */}
+              {activeTab === "compliance" && (
+                <div className="space-y-6">
+                  {/* SECTION 1: COOKIE CONSENT SETTINGS DEEP DIVE */}
+                  <div className="p-6 rounded-2xl bg-secondary/25 border border-white/10 space-y-5">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+                      <div className="space-y-1">
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+                          <Cookie className="w-3.5 h-3.5" />
+                          PECR &amp; ePrivacy Consent Audit
+                        </span>
+                        <h4 className="text-base font-bold text-foreground">
+                          Cookie Consent Settings &amp; Google Consent Mode v2
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {result.cookieConsent.details}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-mono text-muted-foreground">
+                          Score: <strong className="text-foreground">{result.cookieConsent.score}/100</strong>
+                        </span>
+                        <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${result.cookieConsent.status === "pass" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : result.cookieConsent.status === "warning" ? "bg-amber-500/15 text-amber-400 border-amber-500/30" : "bg-rose-500/15 text-rose-400 border-rose-500/30"}`}>
+                          {result.cookieConsent.status === "pass" ? "✓ Fully Compliant" : result.cookieConsent.status === "warning" ? "⚠ Configuration Required" : "✕ Non-Compliant"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 6-Point Settings Matrix */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                      {/* 1. CMP Provider */}
+                      <div className="p-3.5 rounded-xl bg-secondary/40 border border-white/5 space-y-1">
+                        <span className="text-muted-foreground font-medium flex items-center justify-between">
+                          <span>1. CMP Banner Platform</span>
+                          {result.cookieConsent.detected ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <X className="w-3.5 h-3.5 text-rose-400" />
+                          )}
+                        </span>
+                        <p className="font-bold text-foreground">
+                          {result.cookieConsent.detected ? result.cookieConsent.provider : "No CMP Detected"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {result.cookieConsent.detected ? "Active consent UI detected" : "Required for non-essential cookies"}
+                        </p>
+                      </div>
+
+                      {/* 2. Reject All */}
+                      <div className="p-3.5 rounded-xl bg-secondary/40 border border-white/5 space-y-1">
+                        <span className="text-muted-foreground font-medium flex items-center justify-between">
+                          <span>2. Explicit &apos;Reject All&apos;</span>
+                          {result.cookieConsent.hasRejectAll ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <X className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                        </span>
+                        <p className="font-bold text-foreground">
+                          {result.cookieConsent.hasRejectAll ? "Equal Prominence" : "Missing / Obscured"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          EDPB &amp; UK ICO require 1-click rejection
+                        </p>
+                      </div>
+
+                      {/* 3. Granular Category Controls */}
+                      <div className="p-3.5 rounded-xl bg-secondary/40 border border-white/5 space-y-1">
+                        <span className="text-muted-foreground font-medium flex items-center justify-between">
+                          <span>3. Granular Category Toggles</span>
+                          {result.cookieConsent.hasGranularSettings ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <X className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                        </span>
+                        <p className="font-bold text-foreground">
+                          {result.cookieConsent.hasGranularSettings ? "Preferences Drawer Present" : "Missing Granular Toggles"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Separate Analytics, Ads, Preferences
+                        </p>
+                      </div>
+
+                      {/* 4. Google Consent Mode v2 */}
+                      <div className="p-3.5 rounded-xl bg-secondary/40 border border-white/5 space-y-1">
+                        <span className="text-muted-foreground font-medium flex items-center justify-between">
+                          <span>4. Google Consent Mode v2</span>
+                          {result.cookieConsent.hasGoogleConsentModeV2 ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <X className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                        </span>
+                        <p className="font-bold text-foreground">
+                          {result.cookieConsent.hasGoogleConsentModeV2 ? "Default 'Denied' Configured" : "Missing Consent Mode v2"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          ad_user_data &amp; analytics_storage
+                        </p>
+                      </div>
+
+                      {/* 5. Prior Consent Blocking */}
+                      <div className="p-3.5 rounded-xl bg-secondary/40 border border-white/5 space-y-1">
+                        <span className="text-muted-foreground font-medium flex items-center justify-between">
+                          <span>5. Prior Consent Script Guard</span>
+                          {result.cookieConsent.hasExplicitPriorConsent ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                        </span>
+                        <p className="font-bold text-foreground">
+                          {result.cookieConsent.hasExplicitPriorConsent ? "Tags Deferred / Guarded" : "Unblocked Trackers Detected"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Cookies cannot load prior to opt-in
+                        </p>
+                      </div>
+
+                      {/* 6. Revocation Mechanism */}
+                      <div className="p-3.5 rounded-xl bg-secondary/40 border border-white/5 space-y-1">
+                        <span className="text-muted-foreground font-medium flex items-center justify-between">
+                          <span>6. Consent Revocation Link</span>
+                          {result.cookieConsent.hasConsentWithdrawalMechanism ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <X className="w-3.5 h-3.5 text-amber-400" />
+                          )}
+                        </span>
+                        <p className="font-bold text-foreground">
+                          {result.cookieConsent.hasConsentWithdrawalMechanism ? "Persistent Trigger Present" : "Missing Revocation Widget"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Users must be able to alter choice anytime
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Actionable Missing Consent Advice */}
+                    {result.cookieConsent.missingAdvice.length > 0 && (
+                      <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
+                          <span>Actionable Cookie Consent Advice (UK GDPR &amp; PECR Regulation 6)</span>
+                        </div>
+                        <ul className="space-y-1.5 text-xs text-muted-foreground list-disc list-inside">
+                          {result.cookieConsent.missingAdvice.map((advice, idx) => (
+                            <li key={idx} className="leading-relaxed">
+                              {advice}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SECTION 2: LEGAL PAGES & REGULATORY COMPLIANCE MATRIX */}
+                  <div className="p-6 rounded-2xl bg-secondary/25 border border-white/10 space-y-5">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+                      <div className="space-y-1">
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-teal-400 uppercase tracking-wider">
+                          <Scale className="w-3.5 h-3.5" />
+                          Statutory &amp; Regulatory Documentation
+                        </span>
+                        <h4 className="text-base font-bold text-foreground">
+                          Mandatory Legal Pages Audit ({result.legalPages.totalFound} of {result.legalPages.totalChecked} Verified)
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {result.legalPages.summary}
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-lg text-xs font-bold border shrink-0 ${result.legalPages.status === "pass" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : result.legalPages.status === "warning" ? "bg-amber-500/15 text-amber-400 border-amber-500/30" : "bg-rose-500/15 text-rose-400 border-rose-500/30"}`}>
+                        {result.legalPages.totalFound} / {result.legalPages.totalChecked} Legal Pages Found
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {result.cookieConsent.details}
-                    </p>
+
+                    {/* Legal Pages Breakdown Cards */}
+                    <div className="space-y-4">
+                      {result.legalPages.pages.map((page) => (
+                        <div
+                          key={page.id}
+                          className={`p-5 rounded-xl border transition-all ${
+                            page.found
+                              ? "bg-secondary/30 border-white/10"
+                              : "bg-rose-500/5 border-rose-500/20"
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <FileText className={`w-4 h-4 ${page.found ? "text-emerald-400" : "text-rose-400"}`} />
+                                <h5 className="text-sm font-bold text-foreground">
+                                  {page.name}
+                                </h5>
+                              </div>
+                              <span className="text-[10px] font-semibold text-muted-foreground block">
+                                Governing Law: <strong className="text-foreground">{page.requiredBy}</strong>
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {page.found ? (
+                                <>
+                                  <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                                    <CheckCheck className="w-3.5 h-3.5" /> Published
+                                  </span>
+                                  {page.url && (
+                                    <a
+                                      href={page.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-2.5 py-1 rounded-md bg-secondary/80 hover:bg-secondary text-[11px] font-semibold text-foreground border border-white/10 flex items-center gap-1 transition-all"
+                                    >
+                                      <span>Visit Route</span>
+                                      <ExternalLink className="w-3 h-3 text-[#00f0ff]" />
+                                    </a>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1">
+                                  <XCircle className="w-3.5 h-3.5" /> Missing from Navigation
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-muted-foreground my-3 leading-relaxed">
+                            {page.summary}
+                          </p>
+
+                          {/* Mandatory Checklist */}
+                          <div className="space-y-2 pt-1">
+                            <span className="text-[11px] font-bold text-foreground uppercase tracking-wider block">
+                              Mandatory Inclusions for Full Compliance:
+                            </span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {page.mandatoryInclusions.map((item, idx) => (
+                                <div
+                                  key={idx}
+                                  className="p-2 rounded-lg bg-black/20 dark:bg-white/5 text-[11px] text-muted-foreground flex items-start gap-2"
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#00f0ff] mt-1.5 shrink-0" />
+                                  <span className="leading-snug">{item}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Advice if missing */}
+                          {!page.found && page.missingAdvice.length > 0 && (
+                            <div className="mt-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-1">
+                              <p className="font-bold flex items-center gap-1.5">
+                                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                                Legal Compliance Advice:
+                              </p>
+                              {page.missingAdvice.map((adv, aIdx) => (
+                                <p key={aIdx} className="text-[11px] text-muted-foreground leading-relaxed">
+                                  {adv}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* TAB 4: LINKS & ANCHORS */}
+              {/* TAB 5: LINKS & ANCHORS */}
               {activeTab === "links" && (
                 <div className="p-5 rounded-xl bg-secondary/20 border border-white/5 space-y-4">
                   <div className="flex items-center justify-between border-b border-white/5 pb-3">
                     <div>
                       <h4 className="text-sm font-bold text-foreground">
-                        Link Architecture & Sample Probes
+                        Link Architecture &amp; Sample Probes
                       </h4>
                       <p className="text-xs text-muted-foreground">
                         {result.links.message}
@@ -794,15 +1152,15 @@ export function HealthScannerWidget({
                 </div>
               )}
 
-              {/* TAB 5: HTTP & PROTOCOLS */}
+              {/* TAB 6: HTTP & PROTOCOLS */}
               {activeTab === "protocol" && (
                 <div className="p-5 rounded-xl bg-secondary/20 border border-white/5 space-y-4">
                   <h4 className="text-sm font-bold text-foreground">
-                    HTTP Standards & Server Performance
+                    HTTP Standards &amp; Server Performance
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 space-y-2">
-                      <span className="text-muted-foreground font-semibold">Response Status & Latency</span>
+                      <span className="text-muted-foreground font-semibold">Response Status &amp; Latency</span>
                       <p className="text-base font-bold text-emerald-400">
                         {result.protocol.statusCode} OK ({result.protocol.responseTimeMs} ms)
                       </p>
@@ -820,7 +1178,7 @@ export function HealthScannerWidget({
                     </div>
 
                     <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 space-y-2">
-                      <span className="text-muted-foreground font-semibold">Compression & MIME Type</span>
+                      <span className="text-muted-foreground font-semibold">Compression &amp; MIME Type</span>
                       <p className="text-sm font-bold text-foreground capitalize">
                         {result.protocol.compression}
                       </p>
@@ -838,7 +1196,7 @@ export function HealthScannerWidget({
                 </div>
               )}
 
-              {/* TAB 6: SISTER TOOL RECOMMENDATIONS */}
+              {/* TAB 7: SISTER TOOL RECOMMENDATIONS */}
               {activeTab === "tools" && (
                 <div className="space-y-4">
                   <div className="p-4 rounded-xl bg-secondary/20 border border-white/5">
@@ -856,7 +1214,7 @@ export function HealthScannerWidget({
                       <div className="space-y-2">
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#00f0ff]/10 text-[#00f0ff] text-[11px] font-bold">
                           <Bot className="w-3.5 h-3.5" />
-                          AEO & GEO Readiness
+                          AEO &amp; GEO Readiness
                         </div>
                         <h5 className="text-base font-bold text-foreground">
                           AI Engine Optimization Audit
@@ -880,10 +1238,10 @@ export function HealthScannerWidget({
                       <div className="space-y-2">
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-400 text-[11px] font-bold">
                           <ShieldCheck className="w-3.5 h-3.5" />
-                          CVE & Zero-Day Check
+                          CVE &amp; Zero-Day Check
                         </div>
                         <h5 className="text-base font-bold text-foreground">
-                          MITRE & NVD Vulnerability Scan
+                          MITRE &amp; NVD Vulnerability Scan
                         </h5>
                         <p className="text-xs text-muted-foreground leading-relaxed">
                           Probe TLS certificate parameters, software library version CVEs, and NCSC UK Cyber Essentials compliance.
@@ -926,7 +1284,7 @@ export function HealthScannerWidget({
                 </div>
               )}
 
-              {/* TAB 7: CODE FIXES */}
+              {/* TAB 8: CODE FIXES */}
               {activeTab === "fixes" && (
                 <div className="space-y-4">
                   {result.remediationSnippets.map((fix) => (
@@ -975,13 +1333,13 @@ export function HealthScannerWidget({
               <div className="space-y-2 text-center md:text-left">
                 <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center justify-center md:justify-start gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
-                  Enterprise Technical SEO & Web Engineering
+                  Enterprise Technical SEO &amp; Web Engineering
                 </span>
                 <h4 className="text-lg font-bold text-foreground">
-                  Need Full Site Crawling & Architecture Remediation?
+                  Need Full Site Crawling &amp; Architecture Remediation?
                 </h4>
                 <p className="text-xs text-muted-foreground max-w-xl leading-relaxed">
-                  Our UK engineering team builds bespoke high-performance web applications with automated CI/CD link linters, Next.js semantic rendering, and zero-defect accessibility compliance.
+                  Our UK engineering team builds bespoke high-performance web applications with automated CI/CD link linters, Next.js semantic rendering, Google Consent Mode v2 setup, and zero-defect accessibility compliance.
                 </p>
               </div>
               <button
