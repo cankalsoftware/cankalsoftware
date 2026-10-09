@@ -374,7 +374,7 @@ export function HealthScannerWidget({
             </div>
 
             {/* Quick Metrics Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
               <div className="p-3.5 rounded-xl bg-secondary/20 border border-white/5 space-y-1">
                 <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
                   <Heading className="w-3.5 h-3.5 text-[#00f0ff]" />
@@ -445,6 +445,41 @@ export function HealthScannerWidget({
                 </p>
                 <span className={`text-[10px] font-semibold ${result.legalPages.status === "pass" ? "text-emerald-400" : result.legalPages.status === "warning" ? "text-amber-400" : "text-rose-400"}`}>
                   {result.legalPages.status === "pass" ? "✓ Full Compliance" : result.legalPages.status === "warning" ? `⚠ ${result.legalPages.totalChecked - result.legalPages.totalFound} Missing` : "✕ Critical Deficit"}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-secondary/20 border border-white/5 space-y-1">
+                <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+                  Content Security
+                </span>
+                <p className="text-base font-bold text-foreground truncate">
+                  {result.protocol.hasCsp
+                    ? result.protocol.cspType === "nonce-strict"
+                      ? "Nonce-Strict A+"
+                      : result.protocol.cspType === "standard"
+                      ? "Standard CSP"
+                      : "Weak CSP ('unsafe')"
+                    : "Missing CSP"}
+                </p>
+                <span
+                  className={`text-[10px] font-semibold ${
+                    result.protocol.cspType === "nonce-strict"
+                      ? "text-emerald-400"
+                      : result.protocol.cspType === "standard"
+                      ? "text-[#00f0ff]"
+                      : result.protocol.cspType === "weak-unsafe"
+                      ? "text-amber-400"
+                      : "text-rose-400"
+                  }`}
+                >
+                  {result.protocol.cspType === "nonce-strict"
+                    ? "✓ SOC 2 & A+ Pass"
+                    : result.protocol.cspType === "standard"
+                    ? "✓ Baseline Active"
+                    : result.protocol.cspType === "weak-unsafe"
+                    ? "⚠ 'unsafe-inline' Flag"
+                    : "✕ No CSP Active"}
                 </span>
               </div>
 
@@ -1156,9 +1191,51 @@ export function HealthScannerWidget({
               {activeTab === "protocol" && (
                 <div className="p-5 rounded-xl bg-secondary/20 border border-white/5 space-y-4">
                   <h4 className="text-sm font-bold text-foreground">
-                    HTTP Standards &amp; Server Performance
+                    HTTP Standards, Content Security &amp; Server Performance
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                    {/* Content Security Policy (CSP) Card */}
+                    <div className="md:col-span-2 p-4 rounded-xl bg-secondary/30 border border-white/5 space-y-2.5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <span className="text-muted-foreground font-semibold flex items-center gap-1.5">
+                          <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                          Content-Security-Policy (CSP) &amp; XSS Defense Architecture
+                        </span>
+                        <span
+                          className={`px-2.5 py-0.5 rounded text-[11px] font-bold border shrink-0 ${
+                            result.protocol.cspType === "nonce-strict"
+                              ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                              : result.protocol.cspType === "standard"
+                              ? "bg-[#00f0ff]/15 text-[#00f0ff] border-[#00f0ff]/30"
+                              : result.protocol.cspType === "weak-unsafe"
+                              ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+                              : "bg-rose-500/15 text-rose-400 border-rose-500/30"
+                          }`}
+                        >
+                          {result.protocol.cspType === "nonce-strict"
+                            ? "Gold Standard (A+ Nonce-Based)"
+                            : result.protocol.cspType === "standard"
+                            ? "Standard Origin Allowlist"
+                            : result.protocol.cspType === "weak-unsafe"
+                            ? "Weak / 'unsafe-inline' Detected"
+                            : "Missing CSP Header"}
+                        </span>
+                      </div>
+                      <p className="text-xs text-foreground font-medium leading-relaxed">
+                        {result.protocol.cspEvaluation || result.protocol.message}
+                      </p>
+                      {result.protocol.cspValue && (
+                        <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 space-y-1">
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                            Active CSP Header Directive:
+                          </p>
+                          <code className="text-[11px] font-mono text-emerald-300 break-all block">
+                            {result.protocol.cspValue}
+                          </code>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 space-y-2">
                       <span className="text-muted-foreground font-semibold">Response Status &amp; Latency</span>
                       <p className="text-base font-bold text-emerald-400">
@@ -1186,11 +1263,13 @@ export function HealthScannerWidget({
                     </div>
 
                     <div className="p-4 rounded-xl bg-secondary/30 border border-white/5 space-y-2">
-                      <span className="text-muted-foreground font-semibold">Transport Security (TLS/HTTPS)</span>
+                      <span className="text-muted-foreground font-semibold">Transport Security (TLS/HTTPS &amp; HSTS)</span>
                       <p className="text-base font-bold text-emerald-400">
-                        {result.protocol.isHttps ? "Enforced HTTPS" : "Insecure HTTP"}
+                        {result.protocol.isHttps ? "Enforced HTTPS (TLS 1.3)" : "Insecure HTTP"}
                       </p>
-                      <p className="text-muted-foreground">Redirect Hops: {result.protocol.redirectHops}</p>
+                      <p className="text-muted-foreground">
+                        {result.protocol.hasHsts ? "✓ HSTS Preload Active" : "⚠ HSTS Header Missing"} • Redirect Hops: {result.protocol.redirectHops}
+                      </p>
                     </div>
                   </div>
                 </div>

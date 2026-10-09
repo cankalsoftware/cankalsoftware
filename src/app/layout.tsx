@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -157,11 +158,13 @@ const jsonLd = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="en"
@@ -170,6 +173,7 @@ export default function RootLayout({
     >
       <head>
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
@@ -186,11 +190,12 @@ export default function RootLayout({
         />
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col relative">
-        <RecaptchaProvider>
+        <RecaptchaProvider nonce={nonce}>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -211,9 +216,12 @@ export default function RootLayout({
           </ThemeProvider>
         </RecaptchaProvider>
         {process.env.NEXT_PUBLIC_GA_ID && (
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} nonce={nonce} />
         )}
-        <MetaPixel pixelId={process.env.NEXT_PUBLIC_FB_PIXEL_ID || "1643699187349283"} />
+        <MetaPixel
+          pixelId={process.env.NEXT_PUBLIC_FB_PIXEL_ID || "1643699187349283"}
+          nonce={nonce}
+        />
       </body>
     </html>
   );

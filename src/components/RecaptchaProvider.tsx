@@ -4,8 +4,10 @@ import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
 
 export function RecaptchaProvider({
   children,
+  nonce,
 }: {
   children: React.ReactNode;
+  nonce?: string;
 }) {
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
 
@@ -21,7 +23,7 @@ export function RecaptchaProvider({
         async: true,
         defer: true,
         appendTo: "head",
-        nonce: undefined,
+        nonce: nonce,
       }}
     >
       {children}

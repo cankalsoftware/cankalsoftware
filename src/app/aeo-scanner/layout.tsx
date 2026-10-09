@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   title: "Free AEO & LLM Search Readiness Scanner | AI Optimisation Tool",
@@ -87,15 +88,18 @@ const scannerJsonLd = {
   ],
 };
 
-export default function AeoScannerLayout({
+export default async function AeoScannerLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <>
       <script
         type="application/ld+json"
+        nonce={nonce}
         dangerouslySetInnerHTML={{ __html: JSON.stringify(scannerJsonLd) }}
       />
       {children}

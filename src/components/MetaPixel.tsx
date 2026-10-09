@@ -17,7 +17,7 @@ export const trackFbEvent = (eventName: string, params?: Record<string, unknown>
   }
 };
 
-export function MetaPixel({ pixelId }: { pixelId?: string }) {
+export function MetaPixel({ pixelId, nonce }: { pixelId?: string; nonce?: string }) {
   const pathname = usePathname();
 
   useEffect(() => {
@@ -33,6 +33,7 @@ export function MetaPixel({ pixelId }: { pixelId?: string }) {
       <Script
         id="fb-pixel"
         strategy="afterInteractive"
+        nonce={nonce}
         dangerouslySetInnerHTML={{
           __html: `
             !function(f,b,e,v,n,t,s)

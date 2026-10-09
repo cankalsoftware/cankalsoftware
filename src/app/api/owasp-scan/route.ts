@@ -312,11 +312,21 @@ export async function POST(req: NextRequest) {
     // ------------------------------------------------------------------------
     // A03:2026 - Injection & Cross-Site Scripting (XSS)
     // ------------------------------------------------------------------------
+    const lowerCsp = (csp || "").toLowerCase();
+    const hasCspNonce = lowerCsp.includes("'nonce-") || lowerCsp.includes("nonce-");
+    const hasStrictDynamic = lowerCsp.includes("'strict-dynamic'");
+    const hasUnsafeInline = lowerCsp.includes("'unsafe-inline'");
+    const hasUnsafeEval = lowerCsp.includes("'unsafe-eval'");
+    const isGoldStandardCsp = Boolean(csp) && (hasCspNonce || hasStrictDynamic) && !hasUnsafeInline && !hasUnsafeEval;
+
     let a03Score = 10;
     let a03Status: OwaspItem["status"] = "pass";
-    let a03Summary = "Robust Content-Security-Policy (CSP) and MIME-type defences active.";
-    let a03Explanation =
-      "A strict Content-Security-Policy and 'X-Content-Type-Options: nosniff' header are configured, mitigating XSS and script injection.";
+    let a03Summary = isGoldStandardCsp
+      ? "Gold Standard Nonce-Based CSP & Strict-Dynamic Defences Active."
+      : "Robust Content-Security-Policy (CSP) and MIME-type defences active.";
+    let a03Explanation = isGoldStandardCsp
+      ? "Cryptographic per-request nonces with 'strict-dynamic' are active with zero 'unsafe-inline' execution (SOC 2 & SecurityHeaders A+ Compliant)."
+      : "A strict Content-Security-Policy and 'X-Content-Type-Options: nosniff' header are configured, mitigating XSS and script injection.";
 
     if (!csp) {
       a03Score -= 6;
@@ -324,6 +334,12 @@ export async function POST(req: NextRequest) {
       a03Summary = "Missing Content-Security-Policy (CSP) Header.";
       a03Explanation =
         "The website lacks a Content-Security-Policy header. Browsers will execute any inline or externally loaded JavaScript payload if reflected or stored XSS is triggered.";
+    } else if (hasUnsafeInline || hasUnsafeEval) {
+      a03Score -= 2;
+      a03Status = a03Status === "pass" ? "warning" : a03Status;
+      a03Summary = "Weak CSP: 'unsafe-inline' or 'unsafe-eval' detected.";
+      a03Explanation =
+        "Content-Security-Policy is active but includes 'unsafe-inline' or 'unsafe-eval' in script-src. Security scanners (e.g. SecurityHeaders.com) downgrade the rating. Upgrade to Approach 2: Dynamic Nonce-Based CSP.";
     }
 
     if (!xContentType || !xContentType.toLowerCase().includes("nosniff")) {
@@ -339,14 +355,20 @@ export async function POST(req: NextRequest) {
       status: a03Status,
       score: Math.max(0, a03Score),
       maxScore: 10,
-      title: a03Status === "pass" ? "Content Security Policy (CSP) & XSS Defences Active" : "High Injection & Cross-Site Scripting (XSS) Exposure",
+      title: isGoldStandardCsp
+        ? "Gold Standard Nonce-Based CSP (A+ Rating) & Strict XSS Defences"
+        : a03Status === "pass"
+        ? "Content Security Policy (CSP) & XSS Defences Active"
+        : a03Status === "warning"
+        ? "Suboptimal CSP: 'unsafe-inline' / 'unsafe-eval' XSS Exposure"
+        : "High Injection & Cross-Site Scripting (XSS) Exposure",
       summary: a03Summary,
       explanation: a03Explanation,
-      cvssScore: a03Status === "pass" ? undefined : 7.5,
+      cvssScore: a03Status === "pass" ? undefined : a03Status === "warning" ? 4.3 : 7.5,
       cwe: "CWE-79 (Cross-site Scripting) • CWE-430 (MIME Confusion)",
       impact: "Stored/reflected XSS, session cookie harvesting, keylogging, and rogue third-party script execution in visitor browsers.",
-      remediation: "Deploy a Content-Security-Policy header restricting script sources and enforce 'X-Content-Type-Options: nosniff'.",
-      codeSnippet: "add_header Content-Security-Policy \"default-src 'self'; script-src 'self' 'unsafe-inline' https:;\" always;\nadd_header X-Content-Type-Options \"nosniff\" always;",
+      remediation: "Deploy Approach 2: Dynamic Nonce-Based CSP with 'strict-dynamic' in your application middleware/proxy and enforce 'X-Content-Type-Options: nosniff'.",
+      codeSnippet: "// Next.js Nonce-Based CSP (src/proxy.ts)\nconst nonce = Buffer.from(crypto.randomUUID()).toString('base64');\nconst csp = `default-src 'self'; script-src 'self' 'nonce-${nonce}' 'strict-dynamic'; style-src 'self' 'unsafe-inline';`;",
       references: [
         { name: "OWASP Top 10 - A03 Injection", url: "https://owasp.org/Top10/A03_2021-Injection/" },
         { name: "OWASP CSP Cheat Sheet", url: "https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html" },
@@ -764,32 +786,44 @@ add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsaf
 </FilesMatch>`,
 
       nextjsConfig: `// =========================================================================
-// Cankal Software - 2026 OWASP Top 10 Hardening (next.config.ts)
+// Cankal Software - 2026 OWASP Top 10 Hardening (src/proxy.ts or middleware.ts)
 // =========================================================================
-import type { NextConfig } from "next";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-const securityHeaders = [
-  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
-  { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
-  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
-  {
-    key: "Content-Security-Policy",
-    value: "default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' blob: data: https:; connect-src 'self' https:; frame-ancestors 'self'; upgrade-insecure-requests;",
-  },
-];
+export function proxy(request: NextRequest) {
+  // Dynamic Cryptographic Nonce (Approach 2 - SOC 2 & A+ Rating)
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const isDev = process.env.NODE_ENV === "development";
 
-const nextConfig: NextConfig = {
-  poweredByHeader: false, // Disables X-Powered-By: Next.js (A05)
-  async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
-  },
-};
+  const csp = \`
+    default-src 'self';
+    script-src 'self' 'nonce-\${nonce}' 'strict-dynamic'\${isDev ? " 'unsafe-eval'" : ""};
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' data: https://fonts.gstatic.com;
+    img-src 'self' blob: data: https:;
+    connect-src 'self' https:;
+    frame-ancestors 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    upgrade-insecure-requests;
+  \`.replace(/\\s{2,}/g, " ").trim();
 
-export default nextConfig;`,
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("Content-Security-Policy", csp);
+  response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+
+  return response;
+}`,
     };
 
     const result: OwaspScanResult = {

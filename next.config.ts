@@ -44,26 +44,7 @@ const securityHeaders = [
     key: "Report-To",
     value: '{"group":"csp-endpoint","max_age":10886400,"endpoints":[{"url":"/api/security-report"}]}',
   },
-  // 8. Robust Content Security Policy (CSP) with Clickjacking framing defense & real-time telemetry
-  {
-    key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://recaptcha.net https://connect.facebook.net https://www.googletagmanager.com https://*.google-analytics.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' data: https://fonts.gstatic.com",
-      "img-src 'self' blob: data: https: https://www.facebook.com https://*.google-analytics.com https://*.googletagmanager.com",
-      "connect-src 'self' https://www.google.com https://www.gstatic.com https://recaptcha.net https://connect.facebook.net https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
-      "frame-src 'self' https://www.google.com https://recaptcha.net",
-      "frame-ancestors 'self'",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "upgrade-insecure-requests",
-      "report-to csp-endpoint",
-      "report-uri /api/security-report",
-    ].join("; "),
-  },
+  // 8. Note: Dynamic Content-Security-Policy (CSP) with cryptographic nonces is generated per-request in src/proxy.ts
   // 9. Restrict Cross-Origin Resource Sharing (CORS) to trusted origin (OWASP A01:2026)
   {
     key: "Access-Control-Allow-Origin",

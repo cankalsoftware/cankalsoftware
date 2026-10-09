@@ -33,6 +33,10 @@ export interface HealthScanResult {
     hasCanonical: boolean;
     compression: string;
     contactPageUrl?: string;
+    hasCsp: boolean;
+    cspScore: number;
+    cspType?: "nonce-strict" | "standard" | "weak-unsafe" | "missing";
+    cspSummary?: string;
   };
   headings: {
     h1: string[];
@@ -134,6 +138,11 @@ export interface HealthScanResult {
     compression?: string;
     contentType?: string;
     redirectHops: number;
+    hasCsp: boolean;
+    cspValue?: string;
+    cspType?: "nonce-strict" | "standard" | "weak-unsafe" | "missing";
+    cspEvaluation?: string;
+    hasHsts?: boolean;
     status: "pass" | "warning" | "fail";
     message: string;
   };
@@ -1140,12 +1149,46 @@ export async function POST(req: Request) {
       : `Missing ${totalLegalChecked - totalLegalFound} legal compliance page(s). To comply with UK GDPR, EU GDPR, and PECR, publish all missing legal documentation linked in the footer.`;
 
     // ------------------------------------------------------------------------
-    // 9. Protocol, Canonical & Compression Audit
+    // 9. Protocol, Canonical, Compression & Content-Security-Policy (CSP) Audit
     // ------------------------------------------------------------------------
     const canonicalMatch = html.match(/<link\b[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']/i);
     const canonicalUrl = canonicalMatch ? canonicalMatch[1] : undefined;
     const compression = headers.get("content-encoding") || "none (uncompressed)";
     const contentType = headers.get("content-type") || "text/html";
+
+    // Detailed Content Security Policy (CSP) & Transport Analysis
+    const rawCsp = headers.get("content-security-policy") || "";
+    const hasCsp = Boolean(rawCsp);
+    const hasHsts = headers.has("strict-transport-security");
+    let cspType: "nonce-strict" | "standard" | "weak-unsafe" | "missing" = "missing";
+    let cspEvaluation = "Missing Content-Security-Policy (CSP) header. Browsers have zero restrictions against malicious scripts, reflected XSS, or unauthorized third-party iframes.";
+    let cspScore = 0;
+
+    if (hasCsp) {
+      const lowerCsp = rawCsp.toLowerCase();
+      const hasNonce = lowerCsp.includes("'nonce-") || lowerCsp.includes("nonce-");
+      const hasStrictDynamic = lowerCsp.includes("'strict-dynamic'");
+      const hasUnsafeInline = lowerCsp.includes("'unsafe-inline'");
+      const hasUnsafeEval = lowerCsp.includes("'unsafe-eval'");
+
+      if (hasNonce && hasStrictDynamic) {
+        cspType = "nonce-strict";
+        cspScore = 100;
+        cspEvaluation = "Gold Standard Nonce-Based Dynamic CSP with 'strict-dynamic' active. Zero 'unsafe-inline' or 'unsafe-eval' script execution. SOC 2 and SecurityHeaders.com A+ compliant.";
+      } else if (hasNonce) {
+        cspType = "nonce-strict";
+        cspScore = 95;
+        cspEvaluation = "Dynamic cryptographic nonce-based CSP active. Page scripts are authenticated per request.";
+      } else if (hasUnsafeInline || hasUnsafeEval) {
+        cspType = "weak-unsafe";
+        cspScore = 55;
+        cspEvaluation = "Content-Security-Policy is present but contains 'unsafe-inline' or 'unsafe-eval' in script directives. Flagged by SecurityHeaders.com and SOC 2 auditors as an XSS bypass vector. Upgrade to Approach 2 (Nonce-Based Dynamic CSP).";
+      } else {
+        cspType = "standard";
+        cspScore = 85;
+        cspEvaluation = "Standard Content-Security-Policy active with origin allowlists.";
+      }
+    }
 
     let protocolStatus: "pass" | "warning" | "fail" = "pass";
     let protocolMessage = `Status 200 OK via HTTPS (${responseTimeMs}ms response time).`;
@@ -1153,6 +1196,11 @@ export async function POST(req: Request) {
     if (!isHttps) {
       protocolStatus = "fail";
       protocolMessage = "Page served over insecure plain HTTP connection.";
+    } else if (!hasCsp || cspType === "weak-unsafe") {
+      protocolStatus = "warning";
+      protocolMessage = !hasCsp
+        ? "Missing Content-Security-Policy (CSP) header for script injection defense."
+        : "CSP contains 'unsafe-inline' or 'unsafe-eval' which weakens XSS resilience.";
     } else if (!canonicalUrl) {
       protocolStatus = "warning";
       protocolMessage = "Missing `<link rel=\"canonical\">` tag to prevent duplicate content indexing.";
@@ -1197,10 +1245,12 @@ export async function POST(req: Request) {
     if (emptyOrVoidCount > 3) score -= 3;
     if (insecureTargetBlankCount > 0) score -= 2;
 
-    // Protocol & Speed (10 pts)
+    // Protocol, Security & Speed (10 pts)
     if (!isHttps) score -= 10;
-    if (!canonicalUrl) score -= 3;
-    if (responseTimeMs > 1500) score -= 3;
+    if (!hasCsp) score -= 4;
+    else if (cspType === "weak-unsafe") score -= 2;
+    if (!canonicalUrl) score -= 2;
+    if (responseTimeMs > 1500) score -= 2;
 
     const overallScore = Math.max(0, Math.min(100, Math.round(score)));
 
@@ -1230,15 +1280,19 @@ export async function POST(req: Request) {
       });
     }
 
-    // Check for Security Headers
-    const hasHsts = headers.has("strict-transport-security");
-    const hasCsp = headers.has("content-security-policy");
-    if (!hasHsts || !hasCsp) {
+    // Check for Security Headers & CSP
+    if (!hasHsts || !hasCsp || cspType === "weak-unsafe") {
       sisterToolRecommendations.push({
         id: "cve-vulnerability",
-        title: "Incomplete HTTP Security & Transport Headers",
+        title: !hasCsp
+          ? "Missing Content-Security-Policy (CSP) & Transport Headers"
+          : cspType === "weak-unsafe"
+          ? "CSP Weakness: 'unsafe-inline' / 'unsafe-eval' Detected"
+          : "Missing Strict-Transport-Security (HSTS)",
         description:
-          "Missing Strict-Transport-Security (HSTS) or Content-Security-Policy (CSP). Scan your server against MITRE CVE and NVD databases for known vulnerabilities.",
+          !hasCsp || cspType === "weak-unsafe"
+            ? "Your Content-Security-Policy is missing or uses risky 'unsafe-inline' script directives. Run our full CVE & Security Scanner to audit vulnerabilities against MITRE and NVD."
+            : "Missing Strict-Transport-Security (HSTS). Scan your server against MITRE CVE and NVD databases for known vulnerabilities.",
         badge: "CVE & Zero-Day Check",
         link: `/vulnerability-check?domain=${encodeURIComponent(domain)}`,
         urgency: "high",
@@ -1251,14 +1305,52 @@ export async function POST(req: Request) {
           "Audit Broken Access Control (A01), Cryptographic Failures (A02), and Injection risks (A03) against the modern 2026 OWASP benchmark.",
         badge: "2026 OWASP Audit",
         link: `/owasp-check?domain=${encodeURIComponent(domain)}`,
-        urgency: "medium",
+        urgency: cspType === "weak-unsafe" ? "high" : "medium",
       });
     }
 
     // ------------------------------------------------------------------------
-    // 12. Remediation Code Snippets (Consent Mode v2, Cookie Table, GDPR Privacy, etc.)
+    // 12. Remediation Code Snippets (Consent Mode v2, Cookie Table, CSP, GDPR Privacy, etc.)
     // ------------------------------------------------------------------------
     const remediationSnippets: HealthScanResult["remediationSnippets"] = [
+      {
+        id: "nonce-csp-middleware",
+        title: "Gold Standard Nonce-Based CSP (SOC 2 & SecurityHeaders A+)",
+        category: "Content Security Policy (CSP)",
+        snippet: `// Next.js (src/proxy.ts or middleware.ts) Nonce-Based CSP
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
+export function proxy(request: NextRequest) {
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const isDev = process.env.NODE_ENV === "development";
+
+  const cspHeader = \`
+    default-src 'self';
+    script-src 'self' 'nonce-\${nonce}' 'strict-dynamic'\${isDev ? " 'unsafe-eval'" : ""};
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' data: https://fonts.gstatic.com;
+    img-src 'self' blob: data: https:;
+    connect-src 'self' https:;
+    frame-ancestors 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    upgrade-insecure-requests;
+  \`.replace(/\\s{2,}/g, " ").trim();
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", cspHeader);
+
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+  response.headers.set("Content-Security-Policy", cspHeader);
+  return response;
+}`,
+        explanation: "Approach 2 generates a fresh cryptographic nonce per request and uses 'strict-dynamic', completely removing 'unsafe-inline' and 'unsafe-eval' from production scanners.",
+      },
       {
         id: "google-consent-mode-v2",
         title: "Google Consent Mode v2 & Cookie Banner Implementation",
@@ -1390,6 +1482,10 @@ export async function POST(req: Request) {
         hasCanonical: Boolean(canonicalUrl),
         compression,
         contactPageUrl: contactPageInfo?.url || discoveredContactPageUrl,
+        hasCsp,
+        cspScore,
+        cspType,
+        cspSummary: cspEvaluation,
       },
       headings: {
         h1: h1Matches,
@@ -1456,6 +1552,11 @@ export async function POST(req: Request) {
         compression,
         contentType,
         redirectHops: targetRes.redirected ? 1 : 0,
+        hasCsp,
+        cspValue: rawCsp ? rawCsp.substring(0, 300) : undefined,
+        cspType,
+        cspEvaluation,
+        hasHsts,
         status: protocolStatus,
         message: protocolMessage,
       },
