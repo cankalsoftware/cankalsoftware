@@ -83,6 +83,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/email-analysis" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center sm:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
+                  Email Phishing Analysis <span className="text-[10px] px-1 py-0.2 bg-red-500/10 dark:bg-rose-500/20 rounded font-bold">SECURITY</span>
+                </Link>
+              </li>
+              <li>
                 <a
                   href="https://github.com/cankalsoftware/Google-Scrape"
                   target="_blank"

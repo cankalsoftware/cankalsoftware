@@ -17,6 +17,7 @@ import {
   X,
   Code2,
   Wrench,
+  Mail,
 } from "lucide-react";
 
 export function Navbar() {
@@ -70,6 +71,15 @@ export function Navbar() {
       badge: "2026",
       badgeColor: "bg-purple-500/10 dark:bg-purple-500/20 text-[#b52bff] dark:text-[#00f0ff] border-purple-500/20",
       icon: ShieldCheck,
+      external: false,
+    },
+    {
+      name: "Email Phishing Analysis",
+      desc: "Strip .msg & .eml files, inspect raw headers, spoofing & safe links",
+      href: "/email-analysis",
+      badge: "SECURITY",
+      badgeColor: "bg-red-500/10 dark:bg-rose-500/20 text-red-600 dark:text-rose-400 border-red-500/20",
+      icon: Mail,
       external: false,
     },
     {
