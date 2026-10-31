@@ -78,6 +78,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/cve-tracker" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center sm:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
+                  Top 10 CVE Tracker <span className="text-[10px] px-1 py-0.2 bg-red-500/10 dark:bg-rose-500/20 text-red-600 dark:text-rose-400 rounded font-bold">LIVE</span>
+                </Link>
+              </li>
+              <li>
                 <Link href="/owasp-check" className="hover:text-[#00f0ff] transition-colors flex items-center gap-1.5 justify-center sm:justify-start text-[#2563eb] dark:text-[#00f0ff] font-medium">
                   OWASP Top 10 Audit <span className="text-[10px] px-1 py-0.2 bg-purple-500/10 dark:bg-purple-500/20 rounded font-bold">2026</span>
                 </Link>

@@ -18,6 +18,7 @@ import {
   Code2,
   Wrench,
   Mail,
+  Flame,
 } from "lucide-react";
 
 export function Navbar() {
@@ -62,6 +63,15 @@ export function Navbar() {
       badge: "CVE",
       badgeColor: "bg-emerald-500/10 dark:bg-cyan-500/20 text-emerald-600 dark:text-[#00f0ff] border-emerald-500/20",
       icon: ShieldAlert,
+      external: false,
+    },
+    {
+      name: "Top 10 CVE Tracker",
+      desc: "Live dynamic feed scraping the newest CVE disclosures & zero-days",
+      href: "/cve-tracker",
+      badge: "LIVE",
+      badgeColor: "bg-red-500/10 dark:bg-rose-500/20 text-red-600 dark:text-rose-400 border-red-500/20",
+      icon: Flame,
       external: false,
     },
     {
