@@ -1,46 +1,12 @@
-import { Metadata } from "next";
 import { EmailScannerWidget } from "@/components/EmailScannerWidget";
 import {
   ShieldAlert,
   ShieldCheck,
-  Zap,
-  Mail,
-  Lock,
   Search,
-  ExternalLink,
   HelpCircle,
-  ChevronDown,
-  ArrowRight,
-  Sparkles,
   Server,
-  FileText,
-  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
-
-export const metadata: Metadata = {
-  title: "Email Phishing Analysis & Header Forensics Tool | Cankal Software",
-  description:
-    "Free email threat investigator. Strip Outlook .msg and .eml files, inspect raw transport headers, detect sender spoofing with Red/Green indicators, and safely sandbox suspicious links.",
-  keywords: [
-    "email analysis tool",
-    "phishing detector",
-    "parse msg file",
-    "inspect email headers",
-    "spf dkim dmarc checker",
-    "safe link sandbox",
-    "cyber security email forensics",
-    "cankal software",
-  ],
-  openGraph: {
-    title: "Email Phishing Analysis & Threat Forensics | Cankal Software",
-    description:
-      "Strip .msg and .eml email files, analyze raw transport headers, detect spoofed senders, and sandbox suspicious links safely.",
-    url: "https://cankalsoftware.com/email-analysis",
-    siteName: "Cankal Software",
-    type: "website",
-  },
-};
 
 export default function EmailAnalysisPage() {
   const jsonLd = {
